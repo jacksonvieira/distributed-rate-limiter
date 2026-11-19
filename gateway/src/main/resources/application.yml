@@ -1,0 +1,19 @@
+server:
+  port: 8080
+
+gateway:
+  route:
+    # Every request under /api is forwarded to the backend, without the /api prefix.
+    path-prefix: /api
+    uri: http://localhost:8081
+    strip-prefix: true
+    connect-timeout: 2s
+    response-timeout: 30s
+  rate-limit:
+    # Bursts of up to 100 requests, sustained rate of 10 requests per second, per client.
+    capacity: 100
+    refill-tokens: 10
+    refill-period: 1s
+    # ip: one bucket per client IP · header: one bucket per value of key-header (falls back to IP)
+    key: ip
+    key-header: X-API-Key
