@@ -12,7 +12,7 @@ predictable under load. Each algorithm ships with an in-memory reference impleme
 and a Redis-backed implementation that shares state across instances through atomic Lua scripts.
 
 > **Status:** early development. The in-memory and Redis token buckets and a single-route gateway
-> are done; running several gateway instances behind a load balancer is next. See the [roadmap](#roadmap).
+> are done; three gateway instances behind a load balancer share one limit. Next: a distributed integration test. See the [roadmap](#roadmap).
 
 ## Architecture
 
@@ -116,14 +116,25 @@ grows with the number of distinct clients. The Redis implementation will expire 
 
 ## Getting started
 
-Requirements: JDK 25, Maven 3.9+, Docker (for Redis, from phase 2).
+Requirements: JDK 25, Maven 3.9+, Docker (for Redis and the multi-instance setup).
 
 ```bash
 mvn verify                 # build and run the tests
 docker compose up -d       # start Redis locally
 ```
 
-Run the gateway in front of a backend on port 8081:
+Run three gateway instances sharing one limit, behind an nginx load balancer on port 8000
+(capacity 10, one token per second, clients identified by `X-API-Key`):
+
+```bash
+docker compose --profile cluster up -d --build
+for i in $(seq 1 13); do
+  curl -s -o /dev/null -D - -H 'X-API-Key: demo' localhost:8000/api/ | grep -iE '^HTTP|x-upstream'
+done                       # 10 x 200, then 429, whichever instance answers
+docker compose --profile cluster down
+```
+
+Run a single gateway in front of a backend on port 8081:
 
 ```bash
 mvn package -DskipTests
@@ -134,7 +145,7 @@ curl -i http://localhost:8080/api/anything
 ## Roadmap
 
 1. **MVP:** in-memory token bucket ✅, gateway with a single route ✅, README ✅
-2. **Distributed:** Redis implementation with Lua scripts, Testcontainers, Docker Compose with 3 gateway instances behind a load balancer
+2. **Distributed:** Redis implementation with Lua scripts ✅, Testcontainers ✅, Docker Compose with 3 gateway instances behind a load balancer ✅
 3. **More algorithms:** fixed window, sliding window log and sliding window counter; rule configuration in YAML
 4. **Observability:** Micrometer + Prometheus metrics, Grafana dashboard, `X-RateLimit-*` and `Retry-After` headers
 5. **Dynamic rules:** admin API (gRPC), rules in PostgreSQL with Flyway, hot reload
