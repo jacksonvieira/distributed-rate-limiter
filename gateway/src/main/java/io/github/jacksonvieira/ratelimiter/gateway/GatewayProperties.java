@@ -77,6 +77,7 @@ public record GatewayProperties(Route route, RateLimit rateLimit) {
      * @param key          what identifies a client
      * @param keyHeader    header holding the client key when {@code key} is {@link KeyStrategy#HEADER}
      * @param store        where bucket state lives; {@link Store#REDIS} shares it across gateway instances
+     * @param onError      what to do with a request when the limiter itself fails (e.g. Redis is down)
      * @param redis        Redis connection settings, used when {@code store} is {@link Store#REDIS}
      */
     public record RateLimit(
@@ -86,6 +87,7 @@ public record GatewayProperties(Route route, RateLimit rateLimit) {
             @DefaultValue("ip") KeyStrategy key,
             @DefaultValue("X-API-Key") String keyHeader,
             @DefaultValue("memory") Store store,
+            @DefaultValue("fail-open") FailureMode onError,
             @DefaultValue Redis redis) {
 
         public TokenBucketConfig toTokenBucketConfig() {
@@ -97,6 +99,13 @@ public record GatewayProperties(Route route, RateLimit rateLimit) {
      * @param uri Redis connection URI, e.g. {@code redis://localhost:6379}
      */
     public record Redis(@DefaultValue("redis://localhost:6379") String uri) {}
+
+    public enum FailureMode {
+        /** Let the request through unlimited: availability over protection. */
+        FAIL_OPEN,
+        /** Reject the request with {@code 503 Service Unavailable}: protection over availability. */
+        FAIL_CLOSED
+    }
 
     public enum Store {
         /** Buckets kept in this instance's memory: simple, but each gateway instance counts on its own. */
