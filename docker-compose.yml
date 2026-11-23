@@ -1,5 +1,27 @@
 # Local infrastructure for development.
-# Redis backs the distributed rate limiter (phase 2 of the roadmap).
+#
+#   docker compose up -d redis                  only Redis, to run the gateway from your IDE
+#   docker compose --profile cluster up -d --build
+#                                               Redis + backend + 3 gateways behind nginx on :8000
+x-gateway: &gateway
+  build: .
+  profiles: ["cluster"]
+  depends_on:
+    redis:
+      condition: service_healthy
+    backend:
+      condition: service_started
+  environment:
+    GATEWAY_ROUTE_PATHPREFIX: /api
+    GATEWAY_ROUTE_URI: http://backend:80
+    GATEWAY_RATELIMIT_CAPACITY: "10"
+    GATEWAY_RATELIMIT_REFILLTOKENS: "1"
+    GATEWAY_RATELIMIT_REFILLPERIOD: 1s
+    # Behind the load balancer every request comes from nginx's address, so clients are told apart by API key.
+    GATEWAY_RATELIMIT_KEY: header
+    GATEWAY_RATELIMIT_STORE: redis
+    GATEWAY_RATELIMIT_REDIS_URI: redis://redis:6379
+
 services:
   redis:
     image: redis:7-alpine
@@ -12,3 +34,26 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  backend:
+    image: traefik/whoami:v1.10
+    profiles: ["cluster"]
+
+  gateway-1:
+    <<: *gateway
+  gateway-2:
+    <<: *gateway
+  gateway-3:
+    <<: *gateway
+
+  load-balancer:
+    image: nginx:1.27-alpine
+    profiles: ["cluster"]
+    ports:
+      - "8000:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - gateway-1
+      - gateway-2
+      - gateway-3
