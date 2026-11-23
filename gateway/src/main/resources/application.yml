@@ -17,3 +17,7 @@ gateway:
     # ip: one bucket per client IP · header: one bucket per value of key-header (falls back to IP)
     key: ip
     key-header: X-API-Key
+    # memory: each gateway instance counts on its own · redis: one shared limit across all instances
+    store: memory
+    redis:
+      uri: redis://localhost:6379

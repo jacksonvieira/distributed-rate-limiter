@@ -11,8 +11,8 @@ are running, offers several algorithms with documented trade-offs, and stays fas
 predictable under load. Each algorithm ships with an in-memory reference implementation
 and a Redis-backed implementation that shares state across instances through atomic Lua scripts.
 
-> **Status:** early development. The in-memory token bucket and a single-route gateway are done;
-> the Redis implementation is next. See the [roadmap](#roadmap).
+> **Status:** early development. The in-memory and Redis token buckets and a single-route gateway
+> are done; running several gateway instances behind a load balancer is next. See the [roadmap](#roadmap).
 
 ## Architecture
 
@@ -34,7 +34,8 @@ and a Redis-backed implementation that shares state across instances through ato
 
 | Module | Status | Description |
 | --- | --- | --- |
-| `ratelimiter-core` | in progress | Algorithms, with in-memory and Redis-backed implementations |
+| `ratelimiter-core` | in progress | Algorithms and the `RateLimiter` port, with in-memory implementations |
+| `ratelimiter-redis` | in progress | Redis-backed implementations that share state through atomic Lua scripts |
 | `gateway` | in progress | Reactive reverse proxy applying rules per route, key and plan |
 | `admin-api` | planned | Create and update rules at runtime, stored in PostgreSQL |
 | `benchmarks` | planned | Load tests comparing algorithms on latency, throughput and accuracy |
@@ -93,6 +94,9 @@ gateway:
     refill-period: 1s            # ...per second
     key: ip                      # ip | header
     key-header: X-API-Key        # used when key = header; falls back to the client IP
+    store: memory                # memory | redis (redis shares one limit across all instances)
+    redis:
+      uri: redis://localhost:6379   # used when store = redis
 ```
 
 | Situation | Response |

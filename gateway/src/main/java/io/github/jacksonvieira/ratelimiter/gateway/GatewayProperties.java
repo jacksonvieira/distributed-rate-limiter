@@ -76,17 +76,33 @@ public record GatewayProperties(Route route, RateLimit rateLimit) {
      * @param refillPeriod period over which {@code refillTokens} are added
      * @param key          what identifies a client
      * @param keyHeader    header holding the client key when {@code key} is {@link KeyStrategy#HEADER}
+     * @param store        where bucket state lives; {@link Store#REDIS} shares it across gateway instances
+     * @param redis        Redis connection settings, used when {@code store} is {@link Store#REDIS}
      */
     public record RateLimit(
             long capacity,
             long refillTokens,
             Duration refillPeriod,
             @DefaultValue("ip") KeyStrategy key,
-            @DefaultValue("X-API-Key") String keyHeader) {
+            @DefaultValue("X-API-Key") String keyHeader,
+            @DefaultValue("memory") Store store,
+            @DefaultValue Redis redis) {
 
         public TokenBucketConfig toTokenBucketConfig() {
             return new TokenBucketConfig(capacity, refillTokens, refillPeriod);
         }
+    }
+
+    /**
+     * @param uri Redis connection URI, e.g. {@code redis://localhost:6379}
+     */
+    public record Redis(@DefaultValue("redis://localhost:6379") String uri) {}
+
+    public enum Store {
+        /** Buckets kept in this instance's memory: simple, but each gateway instance counts on its own. */
+        MEMORY,
+        /** Buckets kept in Redis: the limit is enforced globally across all gateway instances. */
+        REDIS
     }
 
     public enum KeyStrategy {

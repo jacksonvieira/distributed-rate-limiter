@@ -1,6 +1,5 @@
 package io.github.jacksonvieira.ratelimiter.gateway;
 
-import io.github.jacksonvieira.ratelimiter.core.InMemoryTokenBucketRateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.RateLimiter;
 import io.netty.channel.ChannelOption;
 import org.springframework.context.annotation.Bean;
@@ -14,11 +13,6 @@ import reactor.netty.http.client.HttpClient;
 
 @Configuration(proxyBeanMethods = false)
 class GatewayConfiguration {
-
-    @Bean
-    RateLimiter rateLimiter(GatewayProperties properties) {
-        return new InMemoryTokenBucketRateLimiter(properties.rateLimit().toTokenBucketConfig());
-    }
 
     @Bean
     KeyResolver keyResolver(GatewayProperties properties) {

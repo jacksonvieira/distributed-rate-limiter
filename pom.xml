@@ -57,6 +57,11 @@
                 <artifactId>ratelimiter-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.github.jacksonvieira</groupId>
+                <artifactId>ratelimiter-redis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
