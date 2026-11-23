@@ -54,7 +54,7 @@ The project follows a hexagonal layout, with dependencies always pointing toward
 | Algorithm | Burst handling | Memory per key | Accuracy | Status |
 | --- | --- | --- | --- | --- |
 | Token bucket | Allows bursts up to capacity | O(1) | Exact | ✅ in-memory |
-| Fixed window counter | Bursts at window edges | O(1) | Approximate | planned |
+| Fixed window counter | Bursts at window edges | O(1) | Approximate | ✅ in-memory |
 | Sliding window log | No bursts | O(requests) | Exact | planned |
 | Sliding window counter | Smoothed | O(1) | Approximate | planned |
 
@@ -66,6 +66,13 @@ Each key owns a bucket holding at most `capacity` tokens. Tokens are refilled co
 The in-memory implementation is lock-free: each bucket is an immutable state object updated through
 a compare-and-set loop, so concurrent requests for the same key never receive more permits than
 the bucket holds. Refill is computed lazily on access, so there are no background threads.
+
+### Fixed window counter
+
+Time is split into consecutive windows and each key may use at most `limit` permits per window.
+It needs a single counter per key, but a client can use up to twice the limit around a window
+boundary (the end of one window plus the start of the next). `Retry-After` is the time left in the
+current window.
 
 ## Usage
 
