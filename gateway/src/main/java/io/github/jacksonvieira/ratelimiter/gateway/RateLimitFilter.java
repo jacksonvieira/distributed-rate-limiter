@@ -11,6 +11,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * Applies the rate limit to requests on the route before they are forwarded.
@@ -39,10 +40,16 @@ public final class RateLimitFilter implements WebFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        // The in-memory limiter only does CPU work, so calling it on the event loop is fine.
-        // The Redis limiter (phase 2) will need a reactive variant of this call.
-        RateLimitResult result = rateLimiter.tryAcquire(keyResolver.resolve(exchange.getRequest()));
+        String key = keyResolver.resolve(exchange.getRequest());
 
+        // A RateLimiter is a blocking port (the Redis adapter does network I/O), so it must never run on the
+        // event loop: hand it to a pool meant for blocking calls.
+        return Mono.fromCallable(() -> rateLimiter.tryAcquire(key))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(result -> respond(exchange, chain, result));
+    }
+
+    private static Mono<Void> respond(ServerWebExchange exchange, WebFilterChain chain, RateLimitResult result) {
         ServerHttpResponse response = exchange.getResponse();
         HttpHeaders headers = response.getHeaders();
         headers.set(LIMIT_HEADER, Long.toString(result.limit()));

@@ -30,6 +30,15 @@ and a Redis-backed implementation that shares state across instances through ato
   Admin API (gRPC / REST) to change rules at runtime · Prometheus metrics + Grafana
 ```
 
+### Ports and adapters
+
+The project follows a hexagonal layout, with dependencies always pointing towards the core:
+
+- **Port:** `RateLimiter` in `ratelimiter-core`, with no framework or I/O dependency.
+- **Adapters:** `InMemoryTokenBucketRateLimiter` (core) and `RedisTokenBucketRateLimiter` (`ratelimiter-redis`) implement the port; the `gateway` is the driving adapter that calls it.
+- The gateway picks the adapter from configuration and calls the (blocking) port off the event loop.
+- ArchUnit tests in each module fail the build if the core starts depending on an adapter or a framework.
+
 ### Modules
 
 | Module | Status | Description |
