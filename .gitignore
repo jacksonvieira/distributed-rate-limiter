@@ -17,3 +17,6 @@ Thumbs.db
 # Logs and local env
 *.log
 .env
+
+# Local tooling
+.claude/
