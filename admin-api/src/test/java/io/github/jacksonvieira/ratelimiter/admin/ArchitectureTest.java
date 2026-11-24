@@ -31,4 +31,9 @@ class ArchitectureTest {
     static final ArchRule webAndJdbcAdaptersAreIndependent = noClasses()
             .that().resideInAPackage("..admin.adapter.in..")
             .should().dependOnClassesThat().resideInAPackage("..admin.adapter.out..");
+
+    @ArchTest
+    static final ArchRule jooqStaysInItsAdapter = noClasses()
+            .that().resideOutsideOfPackage("..admin.adapter.out.jooq..")
+            .should().dependOnClassesThat().resideInAnyPackage("org.jooq..", "..adapter.out.jooq.generated..");
 }
