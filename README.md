@@ -232,7 +232,8 @@ curl -X POST localhost:8090/api/rules -H 'Content-Type: application/json' \
   -d '{"name":"login","pathPrefix":"/api/login","capacity":5,"refillTokens":1,"refillPeriod":"PT1M","algorithm":"FIXED_WINDOW","key":"HEADER"}'
 ```
 
-Endpoints: `GET/POST /api/rules`, `GET/PUT/DELETE /api/rules/{id}`. Interactive docs (Swagger UI) at
+Endpoints: `GET/POST /api/rules`, `GET/PUT/DELETE /api/rules/{id}`. Each rule carries HATEOAS `self` and `rules` links
+(added to the rule's own fields, so existing clients keep working). Interactive docs (Swagger UI) at
 `/swagger-ui.html`, OpenAPI document at `/v3/api-docs`. `refillPeriod` is an ISO-8601
 duration. Errors follow RFC 9457 (`404` unknown rule, `409` duplicate name, `400` invalid input).
 
