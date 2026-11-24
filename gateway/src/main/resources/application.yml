@@ -2,6 +2,10 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: gateway
+  reactor:
+    context-propagation: auto
   threads:
     virtual:
       enabled: true
@@ -42,3 +46,11 @@ management:
     web:
       exposure:
         include: health,prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  include-application-name: false
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
