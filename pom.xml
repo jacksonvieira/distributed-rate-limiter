@@ -25,6 +25,7 @@
         <module>ratelimiter-redis</module>
         <module>gateway</module>
         <module>admin-api</module>
+        <module>benchmarks</module>
     </modules>
 
     <properties>
