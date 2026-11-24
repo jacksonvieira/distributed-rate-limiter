@@ -23,9 +23,9 @@ class ArchitectureTest {
             .should().dependOnClassesThat().resideInAnyPackage("org.springframework..", "..admin.adapter..");
 
     @ArchTest
-    static final ArchRule adaptersOnlyUseInboundPort = noClasses()
+    static final ArchRule adaptersOnlyUseInboundPorts = noClasses()
             .that().resideInAPackage("..admin.adapter.in..")
-            .should().dependOnClassesThat().haveSimpleName("RuleService");
+            .should().dependOnClassesThat().haveSimpleNameEndingWith("UseCase");
 
     @ArchTest
     static final ArchRule webAndJdbcAdaptersAreIndependent = noClasses()
