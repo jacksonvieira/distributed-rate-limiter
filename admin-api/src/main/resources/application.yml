@@ -1,0 +1,11 @@
+server:
+  port: 8090
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ratelimiter
+    username: ratelimiter
+    password: ratelimiter
+  threads:
+    virtual:
+      enabled: true

@@ -46,7 +46,7 @@ The project follows a hexagonal layout, with dependencies always pointing toward
 | `ratelimiter-core` | in progress | Algorithms and the `RateLimiter` port, with in-memory implementations |
 | `ratelimiter-redis` | in progress | Redis-backed implementations that share state through atomic Lua scripts |
 | `gateway` | in progress | Reactive reverse proxy applying rules per route, key and plan |
-| `admin-api` | planned | Create and update rules at runtime, stored in PostgreSQL |
+| `admin-api` | in progress | REST API to manage rules at runtime, stored in PostgreSQL (Flyway migrations) |
 | `benchmarks` | planned | Load tests comparing algorithms on latency, throughput and accuracy |
 
 ## Algorithms
@@ -200,6 +200,22 @@ With the cluster profile, Prometheus (`localhost:9090`) scrapes the three gatewa
 (`localhost:3000`, anonymous access, local use only) ships a provisioned **Rate limiter** dashboard:
 decisions per second by outcome, rejections per rule, rejection ratio and limiter failures.
 
+## Admin API
+
+The `admin-api` module stores rules in PostgreSQL (schema managed by Flyway) and exposes a CRUD API
+on port 8090. Rules are ordered by creation; the first match wins, as in the gateway.
+
+```bash
+docker run -d --name rl-pg -p 5432:5432 -e POSTGRES_DB=ratelimiter \
+  -e POSTGRES_USER=ratelimiter -e POSTGRES_PASSWORD=ratelimiter postgres:17-alpine
+java -jar admin-api/target/admin-api-0.1.0-SNAPSHOT.jar
+curl -X POST localhost:8090/api/rules -H 'Content-Type: application/json' \
+  -d '{"name":"login","pathPrefix":"/api/login","capacity":5,"refillTokens":1,"refillPeriod":"PT1M","algorithm":"FIXED_WINDOW","key":"HEADER"}'
+```
+
+Endpoints: `GET/POST /api/rules`, `GET/PUT/DELETE /api/rules/{id}`. `refillPeriod` is an ISO-8601
+duration. Errors follow RFC 9457 (`404` unknown rule, `409` duplicate name, `400` invalid input).
+
 ## Getting started
 
 Requirements: JDK 25, Maven 3.9+, Docker (for Redis and the multi-instance setup).
@@ -234,7 +250,7 @@ curl -i http://localhost:8080/api/anything
 2. **Distributed:** Redis implementation with Lua scripts ✅, Testcontainers ✅, Docker Compose with 3 gateway instances behind a load balancer ✅
 3. **More algorithms:** fixed window, sliding window log and sliding window counter; rule configuration in YAML
 4. **Observability:** Micrometer + Prometheus metrics ✅, Grafana dashboard ✅, `X-RateLimit-*` and `Retry-After` headers
-5. **Dynamic rules:** admin API (gRPC), rules in PostgreSQL with Flyway, hot reload
+5. **Dynamic rules:** admin REST API ✅, rules in PostgreSQL with Flyway ✅, hot reload in the gateway
 6. **Resilience:** local fallback when Redis is down ✅, fail-open / fail-closed modes ✅, circuit breaker ✅
 7. **Benchmarks:** published results comparing the algorithms
 
