@@ -125,7 +125,7 @@ gateway:
     key: ip                      # ip | header
     key-header: X-API-Key        # used when key = header; falls back to the client IP
     on-error: fail-open          # fail-open | fail-closed, when the limiter itself fails
-    algorithm: token-bucket      # token-bucket | fixed-window | sliding-window-log | sliding-window-counter (with store=redis: token-bucket | fixed-window)
+    algorithm: token-bucket      # token-bucket | fixed-window | sliding-window-log | sliding-window-counter (with store=redis: all but sliding-window-log)
     store: memory                # memory | redis (redis shares one limit across all instances)
     redis:
       uri: redis://localhost:6379   # used when store = redis
@@ -170,7 +170,7 @@ gateway:
 
 `path-prefix` is compared with the full request path (including the route prefix) and `plan` with the
 plan header. Each rule counts on its own, so a client has independent counters under different rules.
-With `store=redis`, rules must use `token-bucket` or `fixed-window` for now.
+With `store=redis`, rules must use `token-bucket`, `fixed-window` or `sliding-window-counter` for now.
 
 ### Threading
 
