@@ -84,6 +84,15 @@ class RuleApiIntegrationTest {
     }
 
     @Test
+    void linksEachRuleToItselfAndToTheCollection() {
+        long id = idOf(post("{\"name\":\"linked\"}"));
+
+        String body = client.get().uri("/api/rules/{id}", id).retrieve().body(String.class);
+
+        assertThat(body).contains("/api/rules/" + id).contains("\"rules\"").contains("\"self\"");
+    }
+
+    @Test
     void listsRulesInCreationOrder() {
         post("{\"name\":\"first\"}");
         post("{\"name\":\"second\"}");

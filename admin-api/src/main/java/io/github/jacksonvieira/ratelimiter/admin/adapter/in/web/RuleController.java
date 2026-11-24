@@ -14,6 +14,8 @@ import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +25,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @Slf4j
 @RestController
@@ -40,9 +45,10 @@ class RuleController {
 
     @GetMapping
     @Operation(summary = "List rules in evaluation order")
-    List<RuleResponse> list() {
+    List<EntityModel<RuleResponse>> list() {
         log.info("GET /api/rules");
-        List<RuleResponse> body = mapper.toResponses(listRules.execute());
+        List<EntityModel<RuleResponse>> body = mapper.toResponses(listRules.execute()).stream()
+                .map(this::withLinks).toList();
         log.info("GET /api/rules -> {} rules", body.size());
         log.debug("GET /api/rules -> {}", body);
         return body;
@@ -52,9 +58,9 @@ class RuleController {
     @Operation(summary = "Get a rule", responses = {
             @ApiResponse(responseCode = "200", description = "Rule found"),
             @ApiResponse(responseCode = "404", description = "Unknown rule")})
-    RuleResponse get(@PathVariable("id") long id) {
+    EntityModel<RuleResponse> get(@PathVariable("id") long id) {
         log.info("GET /api/rules/{}", id);
-        RuleResponse body = mapper.toResponse(getRule.execute(id));
+        EntityModel<RuleResponse> body = withLinks(mapper.toResponse(getRule.execute(id)));
         log.info("GET /api/rules/{} -> {}", id, body);
         return body;
     }
@@ -64,10 +70,10 @@ class RuleController {
             @ApiResponse(responseCode = "201", description = "Rule created"),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "409", description = "Duplicate rule name")})
-    ResponseEntity<RuleResponse> create(@Valid @RequestBody RuleRequest request) {
+    ResponseEntity<EntityModel<RuleResponse>> create(@Valid @RequestBody RuleRequest request) {
         log.info("POST /api/rules {}", request);
         Rule created = createRule.execute(mapper.toDefinition(request));
-        RuleResponse body = mapper.toResponse(created);
+        EntityModel<RuleResponse> body = withLinks(mapper.toResponse(created));
         log.info("POST /api/rules -> 201 {}", body);
         return ResponseEntity.created(URI.create("/api/rules/" + created.id())).body(body);
     }
@@ -78,9 +84,10 @@ class RuleController {
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "404", description = "Unknown rule"),
             @ApiResponse(responseCode = "409", description = "Duplicate rule name")})
-    RuleResponse update(@PathVariable("id") long id, @Valid @RequestBody RuleRequest request) {
+    EntityModel<RuleResponse> update(@PathVariable("id") long id, @Valid @RequestBody RuleRequest request) {
         log.info("PUT /api/rules/{} {}", id, request);
-        RuleResponse body = mapper.toResponse(updateRule.execute(id, mapper.toDefinition(request)));
+        EntityModel<RuleResponse> body =
+                withLinks(mapper.toResponse(updateRule.execute(id, mapper.toDefinition(request))));
         log.info("PUT /api/rules/{} -> {}", id, body);
         return body;
     }
@@ -94,5 +101,12 @@ class RuleController {
         deleteRule.execute(id);
         log.info("DELETE /api/rules/{} -> 204", id);
         return ResponseEntity.noContent().build();
+    }
+
+    /** Adds {@code self} and {@code rules} links so clients can navigate without building URLs. */
+    private EntityModel<RuleResponse> withLinks(RuleResponse rule) {
+        Link self = linkTo(methodOn(RuleController.class).get(rule.id())).withSelfRel();
+        Link all = linkTo(methodOn(RuleController.class).list()).withRel("rules");
+        return EntityModel.of(rule, self, all);
     }
 }
