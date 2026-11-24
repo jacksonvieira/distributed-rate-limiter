@@ -2,7 +2,7 @@ package io.github.jacksonvieira.ratelimiter.gateway;
 
 import io.github.jacksonvieira.ratelimiter.core.RateLimiter;
 import io.netty.channel.ChannelOption;
-import java.util.List;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -20,7 +20,7 @@ class GatewayConfiguration {
         return keyResolverFor(properties.rateLimit());
     }
 
-    private static KeyResolver keyResolverFor(GatewayProperties.RateLimit rateLimit) {
+    static KeyResolver keyResolverFor(GatewayProperties.RateLimit rateLimit) {
         return switch (rateLimit.key()) {
             case IP -> KeyResolver.clientIp();
             case HEADER -> KeyResolver.header(rateLimit.keyHeader());
@@ -28,20 +28,11 @@ class GatewayConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(name = "gateway.admin-api.enabled", havingValue = "false", matchIfMissing = true)
     RateLimitPolicy rateLimitPolicy(
             GatewayProperties properties, RateLimiter rateLimiter, KeyResolver keyResolver, RateLimiterFactory factory) {
-        RateLimitPolicy defaultPolicy = RateLimitPolicy.single(rateLimiter, keyResolver);
-        if (properties.rules().isEmpty()) {
-            return defaultPolicy;
-        }
-        List<RuleBasedRateLimitPolicy.CompiledRule> compiled = properties.rules().stream()
-                .map(rule -> {
-                    GatewayProperties.RateLimit effective = rule.applyTo(properties.rateLimit());
-                    return new RuleBasedRateLimitPolicy.CompiledRule(
-                            rule, factory.create(effective, rule.name()), keyResolverFor(effective));
-                })
-                .toList();
-        return new RuleBasedRateLimitPolicy(compiled, defaultPolicy, properties.planHeader());
+        return new RulePolicyBuilder(properties, factory, RateLimitPolicy.single(rateLimiter, keyResolver))
+                .build(properties.rules());
     }
 
     @Bean
