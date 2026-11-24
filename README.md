@@ -226,6 +226,12 @@ The gateway uses Micrometer Tracing with the OpenTelemetry bridge. It continues 
 every log line. Reactor context propagation is enabled, so the ids survive reactive hops. Outgoing calls use the
 auto-configured `WebClient.Builder`, which is what adds the header.
 
+With the cluster profile, spans are exported over OTLP/HTTP to Jaeger (UI at `localhost:16686`). nginx forwards
+`traceparent` and `tracestate`, so a call such as
+`curl -H 'traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01' -H 'X-API-Key: k' localhost:8000/api/x`
+shows up in Jaeger under that trace id. Outside compose, set
+`management.opentelemetry.tracing.export.otlp.endpoint` to your collector.
+
 ## Admin API
 
 The `admin-api` module stores rules in PostgreSQL (schema managed by Flyway) and exposes a CRUD API
