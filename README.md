@@ -135,7 +135,7 @@ gateway:
 | --- | --- |
 | Allowed | Backend response as is, plus `X-RateLimit-Limit` and `X-RateLimit-Remaining` |
 | Bucket empty | `429 Too Many Requests` with `Retry-After` (seconds); the backend is not called |
-| Limiter fails (e.g. Redis down) | `fail-open`: request goes through unlimited · `fail-closed`: `503 Service Unavailable` |
+| Limiter fails (e.g. Redis down) | `fail-open`: request goes through unlimited · `fail-closed`: `503 Service Unavailable` (unless the circuit breaker below is enabled) |
 | Backend unreachable | `502 Bad Gateway` |
 | Backend too slow | `504 Gateway Timeout` |
 | Path outside the route | `404 Not Found`, not limited |
@@ -178,6 +178,14 @@ With `store=redis`, rules must use `token-bucket`, `fixed-window` or `sliding-wi
 blocking limiter call (Redis) runs on Reactor's `boundedElastic` scheduler backed by virtual threads,
 so it never blocks the Netty event loop. Lombok (`@Slf4j`, etc.) is available in the gateway module;
 the core module stays dependency-free.
+
+### Circuit breaker and local fallback
+
+With `store=redis`, set `gateway.rate-limit.redis.circuit-breaker.enabled=true` to degrade gracefully when
+Redis is down. After `failure-threshold` consecutive errors the circuit opens and requests are limited by an
+in-memory limiter of the same algorithm for `open-duration` (no waiting on Redis timeouts); then one request
+probes Redis and a success closes the circuit. During the outage each instance enforces the limit on its
+own, so the effective global limit can be up to N times higher with N instances.
 
 ### Metrics
 
@@ -225,7 +233,7 @@ curl -i http://localhost:8080/api/anything
 3. **More algorithms:** fixed window, sliding window log and sliding window counter; rule configuration in YAML
 4. **Observability:** Micrometer + Prometheus metrics ✅, Grafana dashboard ✅, `X-RateLimit-*` and `Retry-After` headers
 5. **Dynamic rules:** admin API (gRPC), rules in PostgreSQL with Flyway, hot reload
-6. **Resilience:** local fallback when Redis is down, fail-open / fail-closed modes, circuit breaker
+6. **Resilience:** local fallback when Redis is down ✅, fail-open / fail-closed modes ✅, circuit breaker ✅
 7. **Benchmarks:** published results comparing the algorithms
 
 ## License
