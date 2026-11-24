@@ -1,6 +1,10 @@
 package io.github.jacksonvieira.ratelimiter.admin.adapter.in.web;
 
-import io.github.jacksonvieira.ratelimiter.admin.application.port.ManageRules;
+import io.github.jacksonvieira.ratelimiter.admin.application.port.CreateRule;
+import io.github.jacksonvieira.ratelimiter.admin.application.port.DeleteRule;
+import io.github.jacksonvieira.ratelimiter.admin.application.port.GetRule;
+import io.github.jacksonvieira.ratelimiter.admin.application.port.ListRules;
+import io.github.jacksonvieira.ratelimiter.admin.application.port.UpdateRule;
 import io.github.jacksonvieira.ratelimiter.admin.domain.Rule;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,14 +31,18 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Rules", description = "Manage the gateway's rate limit rules. The first matching rule wins.")
 class RuleController {
 
-    private final ManageRules service;
+    private final ListRules listRules;
+    private final GetRule getRule;
+    private final CreateRule createRule;
+    private final UpdateRule updateRule;
+    private final DeleteRule deleteRule;
     private final RuleWebMapper mapper;
 
     @GetMapping
     @Operation(summary = "List rules in evaluation order")
     List<RuleResponse> list() {
         log.info("GET /api/rules");
-        List<RuleResponse> body = mapper.toResponses(service.list());
+        List<RuleResponse> body = mapper.toResponses(listRules.execute());
         log.info("GET /api/rules -> {} rules", body.size());
         log.debug("GET /api/rules -> {}", body);
         return body;
@@ -46,7 +54,7 @@ class RuleController {
             @ApiResponse(responseCode = "404", description = "Unknown rule")})
     RuleResponse get(@PathVariable("id") long id) {
         log.info("GET /api/rules/{}", id);
-        RuleResponse body = mapper.toResponse(service.get(id));
+        RuleResponse body = mapper.toResponse(getRule.execute(id));
         log.info("GET /api/rules/{} -> {}", id, body);
         return body;
     }
@@ -58,7 +66,7 @@ class RuleController {
             @ApiResponse(responseCode = "409", description = "Duplicate rule name")})
     ResponseEntity<RuleResponse> create(@Valid @RequestBody RuleRequest request) {
         log.info("POST /api/rules {}", request);
-        Rule created = service.create(mapper.toDefinition(request));
+        Rule created = createRule.execute(mapper.toDefinition(request));
         RuleResponse body = mapper.toResponse(created);
         log.info("POST /api/rules -> 201 {}", body);
         return ResponseEntity.created(URI.create("/api/rules/" + created.id())).body(body);
@@ -72,7 +80,7 @@ class RuleController {
             @ApiResponse(responseCode = "409", description = "Duplicate rule name")})
     RuleResponse update(@PathVariable("id") long id, @Valid @RequestBody RuleRequest request) {
         log.info("PUT /api/rules/{} {}", id, request);
-        RuleResponse body = mapper.toResponse(service.update(id, mapper.toDefinition(request)));
+        RuleResponse body = mapper.toResponse(updateRule.execute(id, mapper.toDefinition(request)));
         log.info("PUT /api/rules/{} -> {}", id, body);
         return body;
     }
@@ -83,7 +91,7 @@ class RuleController {
             @ApiResponse(responseCode = "404", description = "Unknown rule")})
     ResponseEntity<Void> delete(@PathVariable("id") long id) {
         log.info("DELETE /api/rules/{}", id);
-        service.delete(id);
+        deleteRule.execute(id);
         log.info("DELETE /api/rules/{} -> 204", id);
         return ResponseEntity.noContent().build();
     }
