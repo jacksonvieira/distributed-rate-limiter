@@ -20,6 +20,8 @@ gateway:
     # memory: each gateway instance counts on its own · redis: one shared limit across all instances
     # fail-open: let requests through when the limiter fails · fail-closed: answer 503
     on-error: fail-open
+    # token-bucket | fixed-window (fixed-window: capacity per refill-period, memory store only)
+    algorithm: token-bucket
     store: memory
     redis:
       uri: redis://localhost:6379
