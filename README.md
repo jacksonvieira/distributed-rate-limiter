@@ -306,6 +306,13 @@ The admin API uses Micrometer Tracing with the OpenTelemetry bridge. Incoming `t
 are honoured, and every log line carries `[application,traceId,spanId]` through the MDC. Sampling is 100% by default
 (`management.tracing.sampling.probability`).
 
+### Database schema and jOOQ
+
+The schema is versioned with Flyway (`admin-api/src/main/resources/db/migration`). At build time jOOQ generates
+type-safe table and record classes from those same scripts (`DDLDatabase`, no running database needed) into
+`target/generated-sources/jooq`. The generated code lives under `adapter.out.jooq.generated`, and an ArchUnit rule
+keeps jOOQ confined to that adapter.
+
 ## Benchmarks
 
 The `benchmarks` module has JMH benchmarks that compare the in-memory algorithms under concurrent load, on one
