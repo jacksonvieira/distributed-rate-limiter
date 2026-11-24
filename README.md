@@ -317,6 +317,10 @@ keeps jOOQ confined to that adapter.
 The `V2` migration seeds two default rules (`default-api`: token bucket, 100 per minute per IP under `/api/`;
 `default-fallback`: fixed window, 1000 per minute per IP). Edit or delete them through the admin API.
 
+### Contract tests
+
+`contracts/rules-list.json` describes the `GET /api/rules` response. The admin API's `RulesContractTest` checks it produces that shape and the gateway's `AdminApiContractTest` checks it can read it, so a breaking change on either side fails the build.
+
 ## Benchmarks
 
 The `benchmarks` module has JMH benchmarks that compare the in-memory algorithms under concurrent load, on one

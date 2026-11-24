@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Testing
+- Contract tests: the admin API and the gateway verify the same `contracts/rules-list.json` fixture
+
 ### Data
 - jOOQ type-safe queries in the admin API, with classes generated from the Flyway migrations at build time
 - `V2` migration seeding two default rules (`default-api`, `default-fallback`)
