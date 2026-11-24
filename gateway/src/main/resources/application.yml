@@ -30,6 +30,12 @@ gateway:
     store: memory
     redis:
       uri: redis://localhost:6379
+      # After failure-threshold consecutive Redis errors, limit in memory (per instance) for open-duration,
+      # then probe Redis again.
+      circuit-breaker:
+        enabled: false
+        failure-threshold: 5
+        open-duration: 10s
 
 management:
   endpoints:

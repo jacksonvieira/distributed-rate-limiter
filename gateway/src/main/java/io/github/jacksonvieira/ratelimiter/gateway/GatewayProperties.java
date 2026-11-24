@@ -177,7 +177,17 @@ public record GatewayProperties(
     /**
      * @param uri Redis connection URI, e.g. {@code redis://localhost:6379}
      */
-    public record Redis(@DefaultValue("redis://localhost:6379") String uri) {}
+    public record Redis(
+            @DefaultValue("redis://localhost:6379") String uri, @DefaultValue CircuitBreaker circuitBreaker) {}
+
+    /**
+     * When enabled, repeated Redis failures open a circuit and requests are limited by an in-memory limiter
+     * of the same algorithm (per instance) until Redis recovers.
+     */
+    public record CircuitBreaker(
+            @DefaultValue("false") boolean enabled,
+            @DefaultValue("5") int failureThreshold,
+            @DefaultValue("10s") Duration openDuration) {}
 
     public enum Algorithm {
         TOKEN_BUCKET,

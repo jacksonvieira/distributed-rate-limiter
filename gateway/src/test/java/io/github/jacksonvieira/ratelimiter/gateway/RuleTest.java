@@ -37,7 +37,7 @@ class RuleTest {
         GatewayProperties.RateLimit base = new GatewayProperties.RateLimit(
                 5, 1, Duration.ofSeconds(1), GatewayProperties.KeyStrategy.IP, "X-API-Key",
                 GatewayProperties.Algorithm.TOKEN_BUCKET, GatewayProperties.Store.MEMORY,
-                GatewayProperties.FailureMode.FAIL_OPEN, new GatewayProperties.Redis("redis://x"));
+                GatewayProperties.FailureMode.FAIL_OPEN, new GatewayProperties.Redis("redis://x", new GatewayProperties.CircuitBreaker(false, 5, java.time.Duration.ofSeconds(10))));
         GatewayProperties.Rule rule = new GatewayProperties.Rule(
                 "r", null, null, 50L, null, null, GatewayProperties.Algorithm.FIXED_WINDOW, null, null);
 

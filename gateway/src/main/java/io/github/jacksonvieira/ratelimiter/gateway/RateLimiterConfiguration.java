@@ -1,5 +1,6 @@
 package io.github.jacksonvieira.ratelimiter.gateway;
 
+import io.github.jacksonvieira.ratelimiter.core.CircuitBreakerRateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.FixedWindowConfig;
 import io.github.jacksonvieira.ratelimiter.core.InMemoryFixedWindowRateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.InMemorySlidingWindowCounterRateLimiter;
@@ -34,7 +35,7 @@ class RateLimiterConfiguration {
         return (rateLimit, scope) -> inMemory(rateLimit);
     }
 
-    private static RateLimiter inMemory(GatewayProperties.RateLimit rateLimit) {
+    static RateLimiter inMemory(GatewayProperties.RateLimit rateLimit) {
         return switch (rateLimit.algorithm()) {
             case TOKEN_BUCKET -> new InMemoryTokenBucketRateLimiter(rateLimit.toTokenBucketConfig());
             case FIXED_WINDOW -> new InMemoryFixedWindowRateLimiter(
@@ -62,7 +63,23 @@ class RateLimiterConfiguration {
 
         @Bean
         RateLimiterFactory redisRateLimiterFactory(StatefulRedisConnection<String, String> connection) {
-            return (rateLimit, scope) -> switch (rateLimit.algorithm()) {
+            return (rateLimit, scope) -> withCircuitBreaker(rateLimit, redis(connection, rateLimit, scope));
+        }
+
+        private static RateLimiter withCircuitBreaker(GatewayProperties.RateLimit rateLimit, RateLimiter redis) {
+            GatewayProperties.CircuitBreaker breaker = rateLimit.redis().circuitBreaker();
+            if (!breaker.enabled()) {
+                return redis;
+            }
+            return new CircuitBreakerRateLimiter(
+                    redis, inMemory(rateLimit), breaker.failureThreshold(), breaker.openDuration());
+        }
+
+        private static RateLimiter redis(
+                StatefulRedisConnection<String, String> connection,
+                GatewayProperties.RateLimit rateLimit,
+                String scope) {
+            return switch (rateLimit.algorithm()) {
                 case TOKEN_BUCKET -> new RedisTokenBucketRateLimiter(
                         connection, rateLimit.toTokenBucketConfig(), prefix("rl:tb:", scope));
                 case FIXED_WINDOW -> new RedisFixedWindowRateLimiter(
