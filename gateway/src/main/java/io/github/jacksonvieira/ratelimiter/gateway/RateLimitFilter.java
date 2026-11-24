@@ -28,8 +28,7 @@ public final class RateLimitFilter implements WebFilter, Ordered {
     static final String REMAINING_HEADER = "X-RateLimit-Remaining";
 
     private final GatewayProperties.Route route;
-    private final RateLimiter rateLimiter;
-    private final KeyResolver keyResolver;
+    private final RateLimitPolicy policy;
     private final GatewayProperties.FailureMode failureMode;
 
     public RateLimitFilter(GatewayProperties.Route route, RateLimiter rateLimiter, KeyResolver keyResolver) {
@@ -41,9 +40,13 @@ public final class RateLimitFilter implements WebFilter, Ordered {
             RateLimiter rateLimiter,
             KeyResolver keyResolver,
             GatewayProperties.FailureMode failureMode) {
+        this(route, RateLimitPolicy.single(rateLimiter, keyResolver), failureMode);
+    }
+
+    public RateLimitFilter(
+            GatewayProperties.Route route, RateLimitPolicy policy, GatewayProperties.FailureMode failureMode) {
         this.route = route;
-        this.rateLimiter = rateLimiter;
-        this.keyResolver = keyResolver;
+        this.policy = policy;
         this.failureMode = failureMode;
     }
 
@@ -53,13 +56,13 @@ public final class RateLimitFilter implements WebFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        String key = keyResolver.resolve(exchange.getRequest());
+        RateLimitPolicy.Selection selection = policy.select(exchange.getRequest());
 
         // A RateLimiter is a blocking port (the Redis adapter does network I/O), so it must never run on the
         // event loop: hand it to a pool meant for blocking calls.
         // Only the limiter call is guarded: errors raised later by the chain (the backend) must not be
         // mistaken for limiter failures, nor run the chain twice.
-        return Mono.fromCallable(() -> Optional.of(rateLimiter.tryAcquire(key)))
+        return Mono.fromCallable(() -> Optional.of(selection.limiter().tryAcquire(selection.key())))
                 .subscribeOn(Schedulers.boundedElastic())
                 .onErrorResume(error -> {
                     log.warn("Rate limiter failed ({}), applying {}", error.toString(), failureMode);

@@ -22,9 +22,17 @@ import org.springframework.context.annotation.Configuration;
 class RateLimiterConfiguration {
 
     @Bean
+    RateLimiter rateLimiter(GatewayProperties properties, RateLimiterFactory factory) {
+        return factory.create(properties.rateLimit(), null);
+    }
+
+    @Bean
     @ConditionalOnProperty(name = "gateway.rate-limit.store", havingValue = "memory", matchIfMissing = true)
-    RateLimiter inMemoryRateLimiter(GatewayProperties properties) {
-        GatewayProperties.RateLimit rateLimit = properties.rateLimit();
+    RateLimiterFactory inMemoryRateLimiterFactory() {
+        return (rateLimit, scope) -> inMemory(rateLimit);
+    }
+
+    private static RateLimiter inMemory(GatewayProperties.RateLimit rateLimit) {
         return switch (rateLimit.algorithm()) {
             case TOKEN_BUCKET -> new InMemoryTokenBucketRateLimiter(rateLimit.toTokenBucketConfig());
             case FIXED_WINDOW -> new InMemoryFixedWindowRateLimiter(
@@ -51,13 +59,15 @@ class RateLimiterConfiguration {
         }
 
         @Bean
-        RateLimiter redisRateLimiter(GatewayProperties properties, StatefulRedisConnection<String, String> connection) {
-            GatewayProperties.RateLimit rateLimit = properties.rateLimit();
-            if (rateLimit.algorithm() != GatewayProperties.Algorithm.TOKEN_BUCKET) {
-                throw new IllegalStateException(
-                        "gateway.rate-limit.algorithm=" + rateLimit.algorithm() + " is not available with store=redis yet");
-            }
-            return new RedisTokenBucketRateLimiter(connection, rateLimit.toTokenBucketConfig());
+        RateLimiterFactory redisRateLimiterFactory(StatefulRedisConnection<String, String> connection) {
+            return (rateLimit, scope) -> {
+                if (rateLimit.algorithm() != GatewayProperties.Algorithm.TOKEN_BUCKET) {
+                    throw new IllegalStateException("algorithm " + rateLimit.algorithm()
+                            + " is not available with store=redis yet");
+                }
+                String prefix = scope == null ? "rl:tb:" : "rl:tb:" + scope + ":";
+                return new RedisTokenBucketRateLimiter(connection, rateLimit.toTokenBucketConfig(), prefix);
+            };
         }
     }
 }

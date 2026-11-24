@@ -147,6 +147,31 @@ to whatever they like. The gateway itself adds `X-Forwarded-For`, `X-Forwarded-H
 Known limitation: the in-memory limiter keeps one bucket per key and never evicts them, so memory
 grows with the number of distinct clients. The Redis implementation will expire idle keys.
 
+### Rules
+
+`gateway.rules` overrides parts of the default limit for the requests it matches. Rules are checked in
+order and the first match wins; anything else uses `gateway.rate-limit`. Every field but `name` is
+optional and inherited from the default when omitted.
+
+```yaml
+gateway:
+  plan-header: X-Plan             # header matched against a rule's plan
+  rules:
+    - name: login                 # stricter limit on a sensitive endpoint
+      path-prefix: /api/login
+      capacity: 5
+      algorithm: fixed-window
+      refill-period: 1m
+    - name: premium               # bigger quota for a paying plan
+      plan: premium
+      capacity: 1000
+      refill-tokens: 100
+```
+
+`path-prefix` is compared with the full request path (including the route prefix) and `plan` with the
+plan header. Each rule counts on its own, so a client has independent counters under different rules.
+With `store=redis`, rules must use `token-bucket` for now.
+
 ### Threading
 
 `spring.threads.virtual.enabled=true` runs Spring's task executors on virtual threads, and the
