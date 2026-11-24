@@ -45,8 +45,9 @@ class GatewayConfiguration {
     }
 
     @Bean
-    RateLimitFilter rateLimitFilter(GatewayProperties properties, RateLimitPolicy policy) {
-        return new RateLimitFilter(properties.route(), policy, properties.rateLimit().onError());
+    RateLimitFilter rateLimitFilter(
+            GatewayProperties properties, RateLimitPolicy policy, RateLimitObserver observer) {
+        return new RateLimitFilter(properties.route(), policy, properties.rateLimit().onError(), observer);
     }
 
     @Bean

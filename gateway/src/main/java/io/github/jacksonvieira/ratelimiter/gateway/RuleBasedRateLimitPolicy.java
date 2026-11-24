@@ -29,7 +29,7 @@ final class RuleBasedRateLimitPolicy implements RateLimitPolicy {
         for (CompiledRule compiled : rules) {
             if (compiled.rule().matches(path, plan)) {
                 String key = compiled.rule().name() + ":" + compiled.keyResolver().resolve(request);
-                return new Selection(compiled.limiter(), key);
+                return new Selection(compiled.limiter(), key, compiled.rule().name());
             }
         }
         return fallback.select(request);
