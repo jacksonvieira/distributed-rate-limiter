@@ -6,6 +6,7 @@ COPY ratelimiter-core/pom.xml ratelimiter-core/
 COPY ratelimiter-redis/pom.xml ratelimiter-redis/
 COPY gateway/pom.xml gateway/
 COPY admin-api/pom.xml admin-api/
+COPY benchmarks/pom.xml benchmarks/
 RUN mvn -B -q -pl ${MODULE} -am dependency:go-offline
 COPY ratelimiter-core ratelimiter-core
 COPY ratelimiter-redis ratelimiter-redis
