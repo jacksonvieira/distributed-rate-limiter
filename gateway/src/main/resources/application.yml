@@ -42,6 +42,10 @@ gateway:
         open-duration: 10s
 
 management:
+  otlp:
+    metrics:
+      export:
+        enabled: false
   endpoints:
     web:
       exposure:
