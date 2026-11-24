@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 - 2026-11-24
 
 ### Observability
 - Distributed tracing with Micrometer Tracing and OpenTelemetry in the gateway and the admin API (W3C `traceparent`)
