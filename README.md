@@ -339,10 +339,18 @@ Run `mvn spotless:apply` to fix them.
 
 Requirements: JDK 25, Maven 3.9+, Docker (for Redis and the multi-instance setup).
 
+A `Makefile` wraps the common tasks; run `make help` to list them:
+
 ```bash
-mvn verify                 # build and run the tests
-docker compose up -d       # start Redis locally
+make verify                # build, run the tests, check formatting and coverage
+make format                # apply Spotless
+make redis-up              # Redis on localhost:6379 (make postgres-up for PostgreSQL)
+make run-gateway           # one gateway on :8080
+make run-admin             # admin API on :8090 against the local PostgreSQL
+make cluster-up            # the whole cluster; make cluster-down to stop it
 ```
+
+The plain commands still work, for example `mvn verify` and `docker compose up -d`.
 
 Run three gateway instances sharing one limit, behind an nginx load balancer on port 8000
 (capacity 10, one token per second, clients identified by `X-API-Key`):
