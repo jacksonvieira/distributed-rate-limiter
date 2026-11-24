@@ -18,6 +18,8 @@ gateway:
     key: ip
     key-header: X-API-Key
     # memory: each gateway instance counts on its own · redis: one shared limit across all instances
+    # fail-open: let requests through when the limiter fails · fail-closed: answer 503
+    on-error: fail-open
     store: memory
     redis:
       uri: redis://localhost:6379

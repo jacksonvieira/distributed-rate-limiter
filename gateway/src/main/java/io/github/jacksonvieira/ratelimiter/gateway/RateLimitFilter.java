@@ -3,6 +3,9 @@ package io.github.jacksonvieira.ratelimiter.gateway;
 import io.github.jacksonvieira.ratelimiter.core.RateLimitResult;
 import io.github.jacksonvieira.ratelimiter.core.RateLimiter;
 import java.time.Duration;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -21,17 +24,29 @@ import reactor.core.scheduler.Schedulers;
  */
 public final class RateLimitFilter implements WebFilter, Ordered {
 
+    private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
+
     static final String LIMIT_HEADER = "X-RateLimit-Limit";
     static final String REMAINING_HEADER = "X-RateLimit-Remaining";
 
     private final GatewayProperties.Route route;
     private final RateLimiter rateLimiter;
     private final KeyResolver keyResolver;
+    private final GatewayProperties.FailureMode failureMode;
 
     public RateLimitFilter(GatewayProperties.Route route, RateLimiter rateLimiter, KeyResolver keyResolver) {
+        this(route, rateLimiter, keyResolver, GatewayProperties.FailureMode.FAIL_OPEN);
+    }
+
+    public RateLimitFilter(
+            GatewayProperties.Route route,
+            RateLimiter rateLimiter,
+            KeyResolver keyResolver,
+            GatewayProperties.FailureMode failureMode) {
         this.route = route;
         this.rateLimiter = rateLimiter;
         this.keyResolver = keyResolver;
+        this.failureMode = failureMode;
     }
 
     @Override
@@ -44,9 +59,25 @@ public final class RateLimitFilter implements WebFilter, Ordered {
 
         // A RateLimiter is a blocking port (the Redis adapter does network I/O), so it must never run on the
         // event loop: hand it to a pool meant for blocking calls.
-        return Mono.fromCallable(() -> rateLimiter.tryAcquire(key))
+        // Only the limiter call is guarded: errors raised later by the chain (the backend) must not be
+        // mistaken for limiter failures, nor run the chain twice.
+        return Mono.fromCallable(() -> Optional.of(rateLimiter.tryAcquire(key)))
                 .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(result -> respond(exchange, chain, result));
+                .onErrorResume(error -> {
+                    log.warn("Rate limiter failed ({}), applying {}", error.toString(), failureMode);
+                    return Mono.just(Optional.<RateLimitResult>empty());
+                })
+                .flatMap(result -> result.isPresent()
+                        ? respond(exchange, chain, result.get())
+                        : onLimiterFailure(exchange, chain));
+    }
+
+    private Mono<Void> onLimiterFailure(ServerWebExchange exchange, WebFilterChain chain) {
+        if (failureMode == GatewayProperties.FailureMode.FAIL_OPEN) {
+            return chain.filter(exchange);
+        }
+        exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
+        return exchange.getResponse().setComplete();
     }
 
     private static Mono<Void> respond(ServerWebExchange exchange, WebFilterChain chain, RateLimitResult result) {

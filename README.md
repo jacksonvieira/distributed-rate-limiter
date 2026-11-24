@@ -110,6 +110,7 @@ gateway:
     refill-period: 1s            # ...per second
     key: ip                      # ip | header
     key-header: X-API-Key        # used when key = header; falls back to the client IP
+    on-error: fail-open          # fail-open | fail-closed, when the limiter itself fails
     store: memory                # memory | redis (redis shares one limit across all instances)
     redis:
       uri: redis://localhost:6379   # used when store = redis
@@ -119,6 +120,7 @@ gateway:
 | --- | --- |
 | Allowed | Backend response as is, plus `X-RateLimit-Limit` and `X-RateLimit-Remaining` |
 | Bucket empty | `429 Too Many Requests` with `Retry-After` (seconds); the backend is not called |
+| Limiter fails (e.g. Redis down) | `fail-open`: request goes through unlimited · `fail-closed`: `503 Service Unavailable` |
 | Backend unreachable | `502 Bad Gateway` |
 | Backend too slow | `504 Gateway Timeout` |
 | Path outside the route | `404 Not Found`, not limited |
