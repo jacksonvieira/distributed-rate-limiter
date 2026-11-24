@@ -19,6 +19,7 @@ public final class InMemorySlidingWindowCounterRateLimiter implements RateLimite
     private final TimeSource timeSource;
     private final long windowNanos;
     private final ConcurrentMap<String, Counters> counters = new ConcurrentHashMap<>();
+    private final IdleKeySweeper<Counters> sweeper;
 
     public InMemorySlidingWindowCounterRateLimiter(SlidingWindowConfig config) {
         this(config, TimeSource.system());
@@ -28,11 +29,13 @@ public final class InMemorySlidingWindowCounterRateLimiter implements RateLimite
         this.config = Objects.requireNonNull(config, "config");
         this.timeSource = Objects.requireNonNull(timeSource, "timeSource");
         this.windowNanos = config.window().toNanos();
+        this.sweeper = new IdleKeySweeper<>(counters, this::isIdle);
     }
 
     @Override
     public RateLimitResult tryAcquire(String key, long permits) {
         validate(key, permits);
+        sweeper.onCall();
 
         Counters state = counters.computeIfAbsent(key, k -> new Counters());
         synchronized (state) {
@@ -68,6 +71,21 @@ public final class InMemorySlidingWindowCounterRateLimiter implements RateLimite
             waitFraction = untilNextWindow + Math.max(0.0, fade);
         }
         return Duration.ofNanos(Math.max(1L, (long) Math.ceil(waitFraction * windowNanos)));
+    }
+
+    // Two whole windows without use leave both counters at zero, like a new key.
+    private boolean isIdle(Counters state) {
+        synchronized (state) {
+            return state.index != Long.MIN_VALUE
+                    && Math.floorDiv(timeSource.nanoTime(), windowNanos) > state.index + 1;
+        }
+    }
+
+    /**
+     * @return number of keys currently tracked (useful for metrics and tests)
+     */
+    public int trackedKeys() {
+        return counters.size();
     }
 
     private void validate(String key, long permits) {
