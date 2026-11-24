@@ -279,6 +279,22 @@ Every response also carries `X-Content-Type-Options: nosniff`, `X-Frame-Options:
 and answers under `/api/` are `Cache-Control: no-store`. Requests declaring a body above `admin.max-body-bytes`
 (default 16384) get `413`.
 
+### TLS
+
+Both the admin API and the gateway are Spring Boot applications, so HTTPS is switched on with the standard
+`server.ssl.*` properties (or `SERVER_SSL_*` variables), for example:
+
+```bash
+keytool -genkeypair -alias dev -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore keystore.p12 \
+  -storepass changeit -dname CN=localhost -ext san=dns:localhost -validity 365
+
+SERVER_SSL_KEY_STORE=file:keystore.p12 SERVER_SSL_KEY_STORE_PASSWORD=changeit SERVER_SSL_KEY_STORE_TYPE=PKCS12 \
+  java -jar admin-api/target/admin-api-0.1.0-SNAPSHOT.jar
+```
+
+Point `gateway.admin-api.url` at an `https://` address and the gateway talks to the admin API over TLS, trusting the
+JVM's trust store. An integration test starts the admin API with a generated keystore and calls it over HTTPS.
+
 ### Tracing
 
 The admin API uses Micrometer Tracing with the OpenTelemetry bridge. Incoming `traceparent` headers (W3C Trace Context)
