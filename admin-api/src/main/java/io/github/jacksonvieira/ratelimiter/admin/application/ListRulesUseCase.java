@@ -5,7 +5,9 @@ import io.github.jacksonvieira.ratelimiter.admin.domain.Rule;
 import io.github.jacksonvieira.ratelimiter.admin.domain.RuleRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 public class ListRulesUseCase implements ListRules {
 
@@ -13,6 +15,8 @@ public class ListRulesUseCase implements ListRules {
 
     @Override
     public List<Rule> execute() {
-        return rules.findAll();
+        List<Rule> all = rules.findAll();
+        log.debug("Listed {} rules", all.size());
+        return all;
     }
 }

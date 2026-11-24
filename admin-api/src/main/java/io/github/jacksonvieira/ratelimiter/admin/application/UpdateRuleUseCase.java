@@ -5,7 +5,9 @@ import io.github.jacksonvieira.ratelimiter.admin.domain.Rule;
 import io.github.jacksonvieira.ratelimiter.admin.domain.RuleDefinition;
 import io.github.jacksonvieira.ratelimiter.admin.domain.RuleRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 public class UpdateRuleUseCase implements UpdateRule {
 
@@ -13,6 +15,8 @@ public class UpdateRuleUseCase implements UpdateRule {
 
     @Override
     public Rule execute(long id, RuleDefinition definition) {
-        return rules.update(id, definition);
+        Rule updated = rules.update(id, definition);
+        log.info("Updated rule {} '{}'", id, definition.name());
+        return updated;
     }
 }
