@@ -5,7 +5,9 @@ import io.github.jacksonvieira.ratelimiter.admin.domain.Rule;
 import io.github.jacksonvieira.ratelimiter.admin.domain.RuleNotFoundException;
 import io.github.jacksonvieira.ratelimiter.admin.domain.RuleRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 public class GetRuleUseCase implements GetRule {
 
@@ -13,6 +15,9 @@ public class GetRuleUseCase implements GetRule {
 
     @Override
     public Rule execute(long id) {
-        return rules.findById(id).orElseThrow(() -> new RuleNotFoundException(id));
+        return rules.findById(id).orElseThrow(() -> {
+            log.warn("Rule {} not found", id);
+            return new RuleNotFoundException(id);
+        });
     }
 }

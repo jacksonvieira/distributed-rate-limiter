@@ -15,10 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 class JdbcRuleRepository implements RuleRepository {
@@ -57,6 +59,7 @@ class JdbcRuleRepository implements RuleRepository {
                     .query(JdbcRuleRepository::map)
                     .single();
         } catch (DuplicateKeyException e) {
+            log.warn("Rejected rule '{}': name already exists", definition.name());
             throw new DuplicateRuleNameException(definition.name());
         }
     }
@@ -77,6 +80,7 @@ class JdbcRuleRepository implements RuleRepository {
                     .optional()
                     .orElseThrow(() -> new RuleNotFoundException(id));
         } catch (DuplicateKeyException e) {
+            log.warn("Rejected update of rule {}: name '{}' already exists", id, definition.name());
             throw new DuplicateRuleNameException(definition.name());
         }
     }
