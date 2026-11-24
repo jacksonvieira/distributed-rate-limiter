@@ -56,7 +56,7 @@ The project follows a hexagonal layout, with dependencies always pointing toward
 | Token bucket | Allows bursts up to capacity | O(1) | Exact | ✅ in-memory |
 | Fixed window counter | Bursts at window edges | O(1) | Approximate | ✅ in-memory |
 | Sliding window log | No bursts | O(requests) | Exact | ✅ in-memory |
-| Sliding window counter | Smoothed | O(1) | Approximate | planned |
+| Sliding window counter | Smoothed | O(1) | Approximate | ✅ in-memory |
 
 ### Token bucket
 
@@ -80,6 +80,13 @@ Stores the timestamp of every granted permit and allows a request only if fewer 
 were granted in the last `window`. It is exact and has no boundary burst, but memory grows with the
 permits granted within the window (up to `limit` per key). `Retry-After` is the time until enough old
 permits leave the window.
+
+### Sliding window counter
+
+Keeps a counter for the current window and one for the previous window, and estimates the load as
+`previous * (1 - elapsed) + current`. It needs O(1) memory per key and softens the fixed window's
+boundary burst, but assumes the previous window's requests were evenly spread, so it is approximate.
+`Retry-After` is the time until the estimate fits the request again.
 
 ## Usage
 
@@ -118,7 +125,7 @@ gateway:
     key: ip                      # ip | header
     key-header: X-API-Key        # used when key = header; falls back to the client IP
     on-error: fail-open          # fail-open | fail-closed, when the limiter itself fails
-    algorithm: token-bucket      # token-bucket | fixed-window | sliding-window-log (window ones: memory store only)
+    algorithm: token-bucket      # token-bucket | fixed-window | sliding-window-log | sliding-window-counter (window ones: memory store only)
     store: memory                # memory | redis (redis shares one limit across all instances)
     redis:
       uri: redis://localhost:6379   # used when store = redis
