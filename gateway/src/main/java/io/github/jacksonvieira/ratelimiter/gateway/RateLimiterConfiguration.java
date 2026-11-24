@@ -8,6 +8,7 @@ import io.github.jacksonvieira.ratelimiter.core.InMemoryTokenBucketRateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.SlidingWindowConfig;
 import io.github.jacksonvieira.ratelimiter.core.RateLimiter;
 import io.github.jacksonvieira.ratelimiter.redis.RedisFixedWindowRateLimiter;
+import io.github.jacksonvieira.ratelimiter.redis.RedisSlidingWindowCounterRateLimiter;
 import io.github.jacksonvieira.ratelimiter.redis.RedisTokenBucketRateLimiter;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -68,6 +69,10 @@ class RateLimiterConfiguration {
                         connection,
                         new FixedWindowConfig(rateLimit.capacity(), rateLimit.refillPeriod()),
                         prefix("rl:fw:", scope));
+                case SLIDING_WINDOW_COUNTER -> new RedisSlidingWindowCounterRateLimiter(
+                        connection,
+                        new SlidingWindowConfig(rateLimit.capacity(), rateLimit.refillPeriod()),
+                        prefix("rl:swc:", scope));
                 default -> throw new IllegalStateException(
                         "algorithm " + rateLimit.algorithm() + " is not available with store=redis yet");
             };
