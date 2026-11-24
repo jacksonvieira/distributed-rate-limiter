@@ -2,6 +2,8 @@ server:
   port: 8090
 
 spring:
+  application:
+    name: admin-api
   datasource:
     url: jdbc:postgresql://localhost:5432/ratelimiter
     username: ratelimiter
@@ -9,3 +11,13 @@ spring:
   threads:
     virtual:
       enabled: true
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  include-application-name: false
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
