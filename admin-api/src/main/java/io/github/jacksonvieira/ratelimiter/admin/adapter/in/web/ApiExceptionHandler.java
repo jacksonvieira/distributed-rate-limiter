@@ -1,6 +1,7 @@
 package io.github.jacksonvieira.ratelimiter.admin.adapter.in.web;
 
 import io.github.jacksonvieira.ratelimiter.admin.domain.DuplicateRuleNameException;
+import io.github.jacksonvieira.ratelimiter.admin.domain.InvalidRuleException;
 import io.github.jacksonvieira.ratelimiter.admin.domain.RuleNotFoundException;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
@@ -23,8 +24,8 @@ class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    ProblemDetail invalid(IllegalArgumentException e) {
+    @ExceptionHandler(InvalidRuleException.class)
+    ProblemDetail invalid(InvalidRuleException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 

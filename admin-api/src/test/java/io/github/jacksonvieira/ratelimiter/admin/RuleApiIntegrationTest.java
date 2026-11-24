@@ -129,6 +129,14 @@ class RuleApiIntegrationTest {
     }
 
     @Test
+    void publishesTheOpenApiDocument() {
+        ResponseEntity<String> docs = client.get().uri("/v3/api-docs").retrieve().toEntity(String.class);
+
+        assertThat(docs.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(docs.getBody()).contains("/api/rules/{id}").contains("RuleRequest");
+    }
+
+    @Test
     void rejectsInvalidInput() {
         assertThat(post("{\"name\":\"\"}").getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(post("{\"name\":\"x\",\"pathPrefix\":\"login\"}").getStatusCode())
