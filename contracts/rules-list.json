@@ -1,0 +1,23 @@
+[
+  {
+    "position": 1,
+    "name": "login",
+    "pathPrefix": "/api/login",
+    "plan": "premium",
+    "capacity": 5,
+    "refillTokens": 1,
+    "refillPeriod": "PT1M",
+    "algorithm": "FIXED_WINDOW",
+    "key": "HEADER",
+    "keyHeader": "X-Api-Key"
+  },
+  {
+    "position": 2,
+    "name": "fallback",
+    "capacity": 100,
+    "refillTokens": 100,
+    "refillPeriod": "PT1S",
+    "algorithm": "TOKEN_BUCKET",
+    "key": "IP"
+  }
+]
