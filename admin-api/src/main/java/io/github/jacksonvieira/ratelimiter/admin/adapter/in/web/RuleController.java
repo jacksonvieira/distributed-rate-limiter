@@ -1,6 +1,6 @@
 package io.github.jacksonvieira.ratelimiter.admin.adapter.in.web;
 
-import io.github.jacksonvieira.ratelimiter.admin.application.RuleService;
+import io.github.jacksonvieira.ratelimiter.admin.application.port.ManageRules;
 import io.github.jacksonvieira.ratelimiter.admin.domain.Rule;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Rules", description = "Manage the gateway's rate limit rules. The first matching rule wins.")
 class RuleController {
 
-    private final RuleService service;
+    private final ManageRules service;
     private final RuleWebMapper mapper;
 
     @GetMapping
