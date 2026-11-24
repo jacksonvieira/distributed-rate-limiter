@@ -2,15 +2,20 @@
 #
 #   docker compose up -d redis                  only Redis, to run the gateway from your IDE
 #   docker compose --profile cluster up -d --build
-#                                               Redis + backend + 3 gateways behind nginx on :8000,
+#                                               Redis + PostgreSQL + admin API (:8090) + backend + 3 gateways behind nginx on :8000,
 #                                               Prometheus on :9090 and Grafana on :3000
 x-gateway: &gateway
-  build: .
+  build:
+    context: .
+    args:
+      MODULE: gateway
   profiles: ["cluster"]
   depends_on:
     redis:
       condition: service_healthy
     backend:
+      condition: service_started
+    admin-api:
       condition: service_started
   environment:
     GATEWAY_ROUTE_PATHPREFIX: /api
@@ -22,6 +27,8 @@ x-gateway: &gateway
     GATEWAY_RATELIMIT_KEY: header
     GATEWAY_RATELIMIT_STORE: redis
     GATEWAY_RATELIMIT_REDIS_URI: redis://redis:6379
+    GATEWAY_ADMINAPI_ENABLED: "true"
+    GATEWAY_ADMINAPI_URL: http://admin-api:8090
 
 services:
   redis:
@@ -35,6 +42,33 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  postgres:
+    image: postgres:17-alpine
+    profiles: ["cluster"]
+    environment:
+      POSTGRES_DB: ratelimiter
+      POSTGRES_USER: ratelimiter
+      POSTGRES_PASSWORD: ratelimiter
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ratelimiter"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  admin-api:
+    build:
+      context: .
+      args:
+        MODULE: admin-api
+    profiles: ["cluster"]
+    ports:
+      - "8090:8090"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ratelimiter
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   backend:
     image: traefik/whoami:v1.10

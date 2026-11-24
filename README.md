@@ -252,6 +252,9 @@ done                       # 10 x 200, then 429, whichever instance answers
 docker compose --profile cluster down
 ```
 
+The cluster also starts PostgreSQL and the admin API on port 8090. The gateways poll it, so rules created
+through `/api/rules` (Swagger UI at `/swagger-ui.html`) take effect without a restart.
+
 Run a single gateway in front of a backend on port 8081:
 
 ```bash
