@@ -179,6 +179,13 @@ blocking limiter call (Redis) runs on Reactor's `boundedElastic` scheduler backe
 so it never blocks the Netty event loop. Lombok (`@Slf4j`, etc.) is available in the gateway module;
 the core module stays dependency-free.
 
+### Metrics
+
+The gateway exposes Prometheus metrics at `/actuator/prometheus`. Every decision increments
+`ratelimiter_decisions_total{rule, outcome}`, where `outcome` is `allowed`, `rejected` or
+`limiter_failed` (the limiter backend errored and the failure mode decided the result). Requests
+that match no rule are reported under `rule="default"`.
+
 ## Getting started
 
 Requirements: JDK 25, Maven 3.9+, Docker (for Redis and the multi-instance setup).
@@ -212,7 +219,7 @@ curl -i http://localhost:8080/api/anything
 1. **MVP:** in-memory token bucket ✅, gateway with a single route ✅, README ✅
 2. **Distributed:** Redis implementation with Lua scripts ✅, Testcontainers ✅, Docker Compose with 3 gateway instances behind a load balancer ✅
 3. **More algorithms:** fixed window, sliding window log and sliding window counter; rule configuration in YAML
-4. **Observability:** Micrometer + Prometheus metrics, Grafana dashboard, `X-RateLimit-*` and `Retry-After` headers
+4. **Observability:** Micrometer + Prometheus metrics ✅, Grafana dashboard, `X-RateLimit-*` and `Retry-After` headers
 5. **Dynamic rules:** admin API (gRPC), rules in PostgreSQL with Flyway, hot reload
 6. **Resilience:** local fallback when Redis is down, fail-open / fail-closed modes, circuit breaker
 7. **Benchmarks:** published results comparing the algorithms

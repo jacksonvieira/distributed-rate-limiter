@@ -30,6 +30,7 @@ public final class RateLimitFilter implements WebFilter, Ordered {
     private final GatewayProperties.Route route;
     private final RateLimitPolicy policy;
     private final GatewayProperties.FailureMode failureMode;
+    private final RateLimitObserver observer;
 
     public RateLimitFilter(GatewayProperties.Route route, RateLimiter rateLimiter, KeyResolver keyResolver) {
         this(route, rateLimiter, keyResolver, GatewayProperties.FailureMode.FAIL_OPEN);
@@ -45,9 +46,18 @@ public final class RateLimitFilter implements WebFilter, Ordered {
 
     public RateLimitFilter(
             GatewayProperties.Route route, RateLimitPolicy policy, GatewayProperties.FailureMode failureMode) {
+        this(route, policy, failureMode, RateLimitObserver.NOOP);
+    }
+
+    public RateLimitFilter(
+            GatewayProperties.Route route,
+            RateLimitPolicy policy,
+            GatewayProperties.FailureMode failureMode,
+            RateLimitObserver observer) {
         this.route = route;
         this.policy = policy;
         this.failureMode = failureMode;
+        this.observer = observer;
     }
 
     @Override
@@ -66,10 +76,11 @@ public final class RateLimitFilter implements WebFilter, Ordered {
                 .subscribeOn(Schedulers.boundedElastic())
                 .onErrorResume(error -> {
                     log.warn("Rate limiter failed ({}), applying {}", error.toString(), failureMode);
+                    observer.onDecision(selection.rule(), RateLimitObserver.Outcome.LIMITER_FAILED);
                     return Mono.just(Optional.<RateLimitResult>empty());
                 })
                 .flatMap(result -> result.isPresent()
-                        ? respond(exchange, chain, result.get())
+                        ? respond(exchange, chain, selection.rule(), result.get())
                         : onLimiterFailure(exchange, chain));
     }
 
@@ -81,7 +92,10 @@ public final class RateLimitFilter implements WebFilter, Ordered {
         return exchange.getResponse().setComplete();
     }
 
-    private static Mono<Void> respond(ServerWebExchange exchange, WebFilterChain chain, RateLimitResult result) {
+    private Mono<Void> respond(
+            ServerWebExchange exchange, WebFilterChain chain, String rule, RateLimitResult result) {
+        observer.onDecision(
+                rule, result.allowed() ? RateLimitObserver.Outcome.ALLOWED : RateLimitObserver.Outcome.REJECTED);
         ServerHttpResponse response = exchange.getResponse();
         HttpHeaders headers = response.getHeaders();
         headers.set(LIMIT_HEADER, Long.toString(result.limit()));

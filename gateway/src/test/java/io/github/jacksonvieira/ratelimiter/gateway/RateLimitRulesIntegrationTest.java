@@ -97,6 +97,21 @@ class RateLimitRulesIntegrationTest {
                 .expectHeader().valueEquals("X-RateLimit-Limit", "50");
     }
 
+    @Test
+    void exposesDecisionCountsPerRuleAndOutcomeToPrometheus() {
+        client.get().uri("/api/login").header("X-API-Key", apiKey).exchange().expectStatus().isOk();
+        client.get().uri("/api/login").header("X-API-Key", apiKey).exchange()
+                .expectStatus().isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        client.get().uri("/api/ping").header("X-API-Key", apiKey).exchange().expectStatus().isOk();
+
+        client.get().uri("/actuator/prometheus").exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).value(body -> org.assertj.core.api.Assertions.assertThat(body)
+                        .contains("ratelimiter_decisions_total{outcome=\"allowed\",rule=\"login\"")
+                        .contains("ratelimiter_decisions_total{outcome=\"rejected\",rule=\"login\"")
+                        .contains("ratelimiter_decisions_total{outcome=\"allowed\",rule=\"default\""));
+    }
+
     private static StubBackend startBackend() {
         try {
             return new StubBackend();
