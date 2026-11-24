@@ -140,6 +140,13 @@ to whatever they like. The gateway itself adds `X-Forwarded-For`, `X-Forwarded-H
 Known limitation: the in-memory limiter keeps one bucket per key and never evicts them, so memory
 grows with the number of distinct clients. The Redis implementation will expire idle keys.
 
+### Threading
+
+`spring.threads.virtual.enabled=true` runs Spring's task executors on virtual threads, and the
+blocking limiter call (Redis) runs on Reactor's `boundedElastic` scheduler backed by virtual threads,
+so it never blocks the Netty event loop. Lombok (`@Slf4j`, etc.) is available in the gateway module;
+the core module stays dependency-free.
+
 ## Getting started
 
 Requirements: JDK 25, Maven 3.9+, Docker (for Redis and the multi-instance setup).

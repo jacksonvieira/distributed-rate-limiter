@@ -1,6 +1,11 @@
 server:
   port: 8080
 
+spring:
+  threads:
+    virtual:
+      enabled: true
+
 gateway:
   route:
     # Every request under /api is forwarded to the backend, without the /api prefix.

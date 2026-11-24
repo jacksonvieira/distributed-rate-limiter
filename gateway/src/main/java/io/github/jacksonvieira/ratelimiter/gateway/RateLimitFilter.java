@@ -4,8 +4,7 @@ import io.github.jacksonvieira.ratelimiter.core.RateLimitResult;
 import io.github.jacksonvieira.ratelimiter.core.RateLimiter;
 import java.time.Duration;
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,9 +21,8 @@ import reactor.core.scheduler.Schedulers;
  * <p>Every limited response carries {@code X-RateLimit-Limit} and {@code X-RateLimit-Remaining};
  * rejected requests get {@code 429 Too Many Requests} with {@code Retry-After} and never reach the backend.
  */
+@Slf4j
 public final class RateLimitFilter implements WebFilter, Ordered {
-
-    private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
 
     static final String LIMIT_HEADER = "X-RateLimit-Limit";
     static final String REMAINING_HEADER = "X-RateLimit-Remaining";
