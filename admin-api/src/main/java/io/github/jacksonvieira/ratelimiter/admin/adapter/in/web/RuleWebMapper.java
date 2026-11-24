@@ -1,5 +1,6 @@
 package io.github.jacksonvieira.ratelimiter.admin.adapter.in.web;
 
+import io.github.jacksonvieira.ratelimiter.admin.domain.InvalidRuleException;
 import io.github.jacksonvieira.ratelimiter.admin.domain.Rule;
 import io.github.jacksonvieira.ratelimiter.admin.domain.RuleDefinition;
 import java.time.Duration;
@@ -34,7 +35,7 @@ interface RuleWebMapper {
         try {
             return Duration.parse(period);
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("refillPeriod must be an ISO-8601 duration such as PT1S");
+            throw new InvalidRuleException("refillPeriod must be an ISO-8601 duration such as PT1S");
         }
     }
 
