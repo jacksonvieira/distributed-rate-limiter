@@ -11,23 +11,42 @@ are running, offers several algorithms with documented trade-offs, and stays fas
 predictable under load. Each algorithm ships with an in-memory reference implementation
 and a Redis-backed implementation that shares state across instances through atomic Lua scripts.
 
-> **Status:** early development. The in-memory and Redis token buckets and a single-route gateway
-> are done; three gateway instances behind a load balancer share one limit. Next: a distributed integration test. See the [roadmap](#roadmap).
+> **Status:** feature complete. Four algorithms (in-memory and Redis), a reactive gateway with metrics and a circuit breaker,
+> an admin API with hot reload, and JMH benchmarks. See the [roadmap](#roadmap).
 
 ## Architecture
 
-```text
-                ┌───────────────────────────────┐
-  clients ────► │  Gateway (Spring Boot 4)       │ ────► backend services
-                │   • routing by path / host     │
-                │   • rate limit filter          │
-                └───────────────┬───────────────┘
-                                │ atomic Lua scripts
-                         ┌──────▼──────┐
-                         │    Redis    │  ← state shared by N gateway instances
-                         └─────────────┘
+```mermaid
+flowchart LR
+    C[Clients] --> LB[nginx]
+    LB --> G1[Gateway 1]
+    LB --> G2[Gateway 2]
+    LB --> G3[Gateway 3]
+    G1 -->|atomic Lua scripts| R[(Redis)]
+    G2 --> R
+    G3 --> R
+    G1 --> B[Backend services]
+    G1 -.->|poll rules| A[Admin API]
+    G2 -.-> A
+    G3 -.-> A
+    A --> P[(PostgreSQL)]
+    G1 -.->|/actuator/prometheus| M[Prometheus + Grafana]
+```
 
-  Admin API (gRPC / REST) to change rules at runtime · Prometheus metrics + Grafana
+Each request goes through the rate limit filter, which picks the rule for the path, builds the key (client IP or header)
+and asks the limiter. If Redis fails, a circuit breaker switches to a local limiter or applies the configured fail mode.
+
+```mermaid
+flowchart TB
+    subgraph admin-api
+        W[adapter.in.web] --> UC[application use cases] --> D[domain ports] --> J[adapter.out.jdbc]
+    end
+    subgraph gateway
+        F[RateLimitFilter] --> PO[RateLimitPolicy]
+    end
+    PO --> L[RateLimiter port in ratelimiter-core]
+    L --> IM[in-memory adapters]
+    L --> RD[Redis adapters]
 ```
 
 ### Ports and adapters
@@ -47,7 +66,7 @@ The project follows a hexagonal layout, with dependencies always pointing toward
 | `ratelimiter-redis` | in progress | Redis-backed implementations that share state through atomic Lua scripts |
 | `gateway` | in progress | Reactive reverse proxy applying rules per route, key and plan |
 | `admin-api` | in progress | REST API to manage rules at runtime, stored in PostgreSQL (Flyway migrations) |
-| `benchmarks` | planned | Load tests comparing algorithms on latency, throughput and accuracy |
+| `benchmarks` | done | JMH benchmarks comparing the in-memory algorithms |
 
 ## Algorithms
 
