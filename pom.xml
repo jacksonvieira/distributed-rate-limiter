@@ -38,6 +38,7 @@
         <spring-boot.version>4.2.0</spring-boot.version>
         <lombok.version>1.18.48</lombok.version>
         <mapstruct.version>1.6.3</mapstruct.version>
+        <jooq.version>3.21.9</jooq.version>
         <springdoc.version>3.2.1</springdoc.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
