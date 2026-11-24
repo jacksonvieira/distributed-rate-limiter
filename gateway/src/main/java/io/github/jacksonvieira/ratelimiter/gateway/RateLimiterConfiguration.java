@@ -7,6 +7,7 @@ import io.github.jacksonvieira.ratelimiter.core.InMemorySlidingWindowLogRateLimi
 import io.github.jacksonvieira.ratelimiter.core.InMemoryTokenBucketRateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.SlidingWindowConfig;
 import io.github.jacksonvieira.ratelimiter.core.RateLimiter;
+import io.github.jacksonvieira.ratelimiter.redis.RedisFixedWindowRateLimiter;
 import io.github.jacksonvieira.ratelimiter.redis.RedisTokenBucketRateLimiter;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
@@ -60,14 +61,20 @@ class RateLimiterConfiguration {
 
         @Bean
         RateLimiterFactory redisRateLimiterFactory(StatefulRedisConnection<String, String> connection) {
-            return (rateLimit, scope) -> {
-                if (rateLimit.algorithm() != GatewayProperties.Algorithm.TOKEN_BUCKET) {
-                    throw new IllegalStateException("algorithm " + rateLimit.algorithm()
-                            + " is not available with store=redis yet");
-                }
-                String prefix = scope == null ? "rl:tb:" : "rl:tb:" + scope + ":";
-                return new RedisTokenBucketRateLimiter(connection, rateLimit.toTokenBucketConfig(), prefix);
+            return (rateLimit, scope) -> switch (rateLimit.algorithm()) {
+                case TOKEN_BUCKET -> new RedisTokenBucketRateLimiter(
+                        connection, rateLimit.toTokenBucketConfig(), prefix("rl:tb:", scope));
+                case FIXED_WINDOW -> new RedisFixedWindowRateLimiter(
+                        connection,
+                        new FixedWindowConfig(rateLimit.capacity(), rateLimit.refillPeriod()),
+                        prefix("rl:fw:", scope));
+                default -> throw new IllegalStateException(
+                        "algorithm " + rateLimit.algorithm() + " is not available with store=redis yet");
             };
+        }
+
+        private static String prefix(String base, String scope) {
+            return scope == null ? base : base + scope + ":";
         }
     }
 }
