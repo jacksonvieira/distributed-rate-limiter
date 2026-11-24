@@ -76,6 +76,19 @@ class GatewayIntegrationTest {
     }
 
     @Test
+    void continuesTheCallersTraceTowardsTheBackend() {
+        String traceId = "4bf92f3577b34da6a3ce929d0e0e4736";
+        client.get().uri("/api/users/42")
+                .header("X-API-Key", apiKey)
+                .header("traceparent", "00-" + traceId + "-00f067aa0ba902b7-01")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).value(body -> assertThat(body)
+                        .contains("traceparent: 00-" + traceId + "-")
+                        .doesNotContain("-00f067aa0ba902b7-"));
+    }
+
+    @Test
     void forwardsTheRequestBodyAndBackendStatus() {
         client.post().uri("/api/orders")
                 .header("X-API-Key", apiKey)

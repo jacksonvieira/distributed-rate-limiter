@@ -44,6 +44,7 @@ final class StubBackend implements AutoCloseable {
 
         String echo = exchange.getRequestMethod() + " " + path + (query == null ? "" : "?" + query)
                 + "\nx-forwarded-for: " + exchange.getRequestHeaders().getFirst("X-Forwarded-For")
+                + "\ntraceparent: " + exchange.getRequestHeaders().getFirst("traceparent")
                 + "\nbody: " + body;
         byte[] bytes = echo.getBytes(StandardCharsets.UTF_8);
 

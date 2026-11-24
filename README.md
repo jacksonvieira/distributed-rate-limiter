@@ -219,6 +219,13 @@ With the cluster profile, Prometheus (`localhost:9090`) scrapes the three gatewa
 (`localhost:3000`, anonymous access, local use only) ships a provisioned **Rate limiter** dashboard:
 decisions per second by outcome, rejections per rule, rejection ratio and limiter failures.
 
+### Tracing
+
+The gateway uses Micrometer Tracing with the OpenTelemetry bridge. It continues the caller's W3C `traceparent`
+(or starts a new trace), forwards it to the backend and to the admin API, and prints `[gateway,traceId,spanId]` on
+every log line. Reactor context propagation is enabled, so the ids survive reactive hops. Outgoing calls use the
+auto-configured `WebClient.Builder`, which is what adds the header.
+
 ## Admin API
 
 The `admin-api` module stores rules in PostgreSQL (schema managed by Flyway) and exposes a CRUD API

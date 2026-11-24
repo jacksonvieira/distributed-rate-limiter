@@ -36,8 +36,8 @@ class DynamicRulesConfiguration implements SchedulingConfigurer {
     static class Beans {
 
         @Bean
-        RuleSource ruleSource(AdminApiProperties adminApi) {
-            WebClient.Builder builder = WebClient.builder().baseUrl(adminApi.url().toString());
+        RuleSource ruleSource(AdminApiProperties adminApi, WebClient.Builder webClientBuilder) {
+            WebClient.Builder builder = webClientBuilder.clone().baseUrl(adminApi.url().toString());
             if (adminApi.apiKey() != null && !adminApi.apiKey().isBlank()) {
                 builder.defaultHeader("X-API-Key", adminApi.apiKey());
             }
