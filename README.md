@@ -217,6 +217,21 @@ Endpoints: `GET/POST /api/rules`, `GET/PUT/DELETE /api/rules/{id}`. Interactive 
 `/swagger-ui.html`, OpenAPI document at `/v3/api-docs`. `refillPeriod` is an ISO-8601
 duration. Errors follow RFC 9457 (`404` unknown rule, `409` duplicate name, `400` invalid input).
 
+### Hot reload of rules
+
+The gateway can poll the admin API and swap its rules at runtime, with no restart. It is disabled by default.
+
+```yaml
+gateway:
+  admin-api:
+    enabled: true
+    url: http://localhost:8090
+    refresh-interval: 10s
+    timeout: 3s
+```
+
+Unchanged rules keep their counters across reloads. If the admin API is unreachable or returns invalid data, the gateway logs a warning and keeps the current rules.
+
 ## Getting started
 
 Requirements: JDK 25, Maven 3.9+, Docker (for Redis and the multi-instance setup).
@@ -251,7 +266,7 @@ curl -i http://localhost:8080/api/anything
 2. **Distributed:** Redis implementation with Lua scripts ✅, Testcontainers ✅, Docker Compose with 3 gateway instances behind a load balancer ✅
 3. **More algorithms:** fixed window, sliding window log and sliding window counter; rule configuration in YAML
 4. **Observability:** Micrometer + Prometheus metrics ✅, Grafana dashboard ✅, `X-RateLimit-*` and `Retry-After` headers
-5. **Dynamic rules:** admin REST API ✅, rules in PostgreSQL with Flyway ✅, hot reload in the gateway
+5. **Dynamic rules:** admin REST API ✅, rules in PostgreSQL with Flyway ✅, hot reload in the gateway ✅
 6. **Resilience:** local fallback when Redis is down ✅, fail-open / fail-closed modes ✅, circuit breaker ✅
 7. **Benchmarks:** published results comparing the algorithms
 
