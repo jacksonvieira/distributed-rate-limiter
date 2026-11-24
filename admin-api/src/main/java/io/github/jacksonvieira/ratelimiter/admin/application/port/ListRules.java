@@ -6,5 +6,8 @@ import java.util.List;
 /** Inbound port: lists the rules in evaluation order. */
 public interface ListRules {
 
+    /**
+     * @return every rule, lowest position first
+     */
     List<Rule> execute();
 }
