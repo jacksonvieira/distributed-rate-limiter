@@ -19,6 +19,7 @@ public final class InMemorySlidingWindowLogRateLimiter implements RateLimiter {
     private final TimeSource timeSource;
     private final long windowNanos;
     private final ConcurrentMap<String, ArrayDeque<Long>> logs = new ConcurrentHashMap<>();
+    private final IdleKeySweeper<ArrayDeque<Long>> sweeper;
 
     public InMemorySlidingWindowLogRateLimiter(SlidingWindowConfig config) {
         this(config, TimeSource.system());
@@ -28,11 +29,13 @@ public final class InMemorySlidingWindowLogRateLimiter implements RateLimiter {
         this.config = Objects.requireNonNull(config, "config");
         this.timeSource = Objects.requireNonNull(timeSource, "timeSource");
         this.windowNanos = config.window().toNanos();
+        this.sweeper = new IdleKeySweeper<>(logs, this::isIdle);
     }
 
     @Override
     public RateLimitResult tryAcquire(String key, long permits) {
         validate(key, permits);
+        sweeper.onCall();
 
         ArrayDeque<Long> log = logs.computeIfAbsent(key, k -> new ArrayDeque<>());
         synchronized (log) {
@@ -61,6 +64,19 @@ public final class InMemorySlidingWindowLogRateLimiter implements RateLimiter {
             }
             return RateLimitResult.allowed(config.limit(), config.limit() - log.size());
         }
+    }
+
+    private boolean isIdle(ArrayDeque<Long> log) {
+        synchronized (log) {
+            return log.isEmpty() || timeSource.nanoTime() - log.peekLast() >= windowNanos;
+        }
+    }
+
+    /**
+     * @return number of keys currently tracked (useful for metrics and tests)
+     */
+    public int trackedKeys() {
+        return logs.size();
     }
 
     private void validate(String key, long permits) {

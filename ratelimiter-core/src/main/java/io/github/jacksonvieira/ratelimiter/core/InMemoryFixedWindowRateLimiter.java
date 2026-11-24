@@ -22,6 +22,7 @@ public final class InMemoryFixedWindowRateLimiter implements RateLimiter {
     private final TimeSource timeSource;
     private final long windowNanos;
     private final ConcurrentMap<String, AtomicReference<WindowState>> windows = new ConcurrentHashMap<>();
+    private final IdleKeySweeper<AtomicReference<WindowState>> sweeper;
 
     public InMemoryFixedWindowRateLimiter(FixedWindowConfig config) {
         this(config, TimeSource.system());
@@ -31,11 +32,15 @@ public final class InMemoryFixedWindowRateLimiter implements RateLimiter {
         this.config = Objects.requireNonNull(config, "config");
         this.timeSource = Objects.requireNonNull(timeSource, "timeSource");
         this.windowNanos = config.window().toNanos();
+        this.sweeper = new IdleKeySweeper<>(
+                windows,
+                window -> window.get().windowIndex() < Math.floorDiv(this.timeSource.nanoTime(), windowNanos));
     }
 
     @Override
     public RateLimitResult tryAcquire(String key, long permits) {
         validate(key, permits);
+        sweeper.onCall();
 
         AtomicReference<WindowState> window =
                 windows.computeIfAbsent(key, k -> new AtomicReference<>(new WindowState(Long.MIN_VALUE, 0)));
@@ -60,6 +65,13 @@ public final class InMemoryFixedWindowRateLimiter implements RateLimiter {
     private Duration untilNextWindow(long now) {
         long nextWindowStart = (Math.floorDiv(now, windowNanos) + 1) * windowNanos;
         return Duration.ofNanos(nextWindowStart - now);
+    }
+
+    /**
+     * @return number of keys currently tracked (useful for metrics and tests)
+     */
+    public int trackedKeys() {
+        return windows.size();
     }
 
     private void validate(String key, long permits) {

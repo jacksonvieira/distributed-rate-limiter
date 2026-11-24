@@ -23,6 +23,8 @@ public final class InMemoryTokenBucketRateLimiter implements RateLimiter {
     private final TimeSource timeSource;
     private final long refillPeriodNanos;
     private final ConcurrentMap<String, AtomicReference<BucketState>> buckets = new ConcurrentHashMap<>();
+    private final long fullRefillNanos;
+    private final IdleKeySweeper<AtomicReference<BucketState>> sweeper;
 
     public InMemoryTokenBucketRateLimiter(TokenBucketConfig config) {
         this(config, TimeSource.system());
@@ -32,11 +34,16 @@ public final class InMemoryTokenBucketRateLimiter implements RateLimiter {
         this.config = Objects.requireNonNull(config, "config");
         this.timeSource = Objects.requireNonNull(timeSource, "timeSource");
         this.refillPeriodNanos = config.refillPeriod().toNanos();
+        // After this long without use an empty bucket is full again, i.e. equal to a new one.
+        this.fullRefillNanos = (long) Math.ceil((double) config.capacity() * refillPeriodNanos / config.refillTokens());
+        this.sweeper = new IdleKeySweeper<>(
+                buckets, bucket -> this.timeSource.nanoTime() - bucket.get().lastRefillNanos() >= fullRefillNanos);
     }
 
     @Override
     public RateLimitResult tryAcquire(String key, long permits) {
         validate(key, permits);
+        sweeper.onCall();
 
         AtomicReference<BucketState> bucket = buckets.computeIfAbsent(
                 key, k -> new AtomicReference<>(new BucketState(config.capacity(), timeSource.nanoTime())));
