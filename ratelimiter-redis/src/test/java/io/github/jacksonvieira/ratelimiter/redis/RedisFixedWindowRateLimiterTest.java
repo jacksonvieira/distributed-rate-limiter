@@ -93,6 +93,8 @@ class RedisFixedWindowRateLimiterTest {
     @Test
     void theCounterResetsWhenTheWindowEnds() throws InterruptedException {
         RedisFixedWindowRateLimiter limiter = limiter(2, Duration.ofMillis(500));
+        // Start just after a window boundary so the three calls cannot straddle two windows.
+        Thread.sleep(500 - System.currentTimeMillis() % 500);
 
         limiter.tryAcquire("user");
         limiter.tryAcquire("user");
