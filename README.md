@@ -232,6 +232,13 @@ gateway:
 
 Unchanged rules keep their counters across reloads. If the admin API is unreachable or returns invalid data, the gateway logs a warning and keeps the current rules.
 
+### Securing the admin API
+
+Set `admin.api-key` (or `ADMIN_APIKEY`) and every call to `/api/**` must send it in the `X-API-Key` header, otherwise the
+answer is `401`. Swagger UI stays open. Without the setting the API is open, which is fine for local use only.
+The gateway sends its key from `gateway.admin-api.api-key`. The compose cluster uses `ADMIN_API_KEY`
+(default `dev-admin-key`).
+
 ## Getting started
 
 Requirements: JDK 25, Maven 3.9+, Docker (for Redis and the multi-instance setup).
