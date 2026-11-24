@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Data
+- jOOQ type-safe queries in the admin API, with classes generated from the Flyway migrations at build time
+- `V2` migration seeding two default rules (`default-api`, `default-fallback`)
+
 ## 0.2.0 - 2026-11-24
 
 ### Observability

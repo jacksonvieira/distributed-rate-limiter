@@ -313,6 +313,9 @@ type-safe table and record classes from those same scripts (`DDLDatabase`, no ru
 `target/generated-sources/jooq`. The generated code lives under `adapter.out.jooq.generated`, and an ArchUnit rule
 keeps jOOQ confined to that adapter.
 
+The `V2` migration seeds two default rules (`default-api`: token bucket, 100 per minute per IP under `/api/`;
+`default-fallback`: fixed window, 1000 per minute per IP). Edit or delete them through the admin API.
+
 ## Benchmarks
 
 The `benchmarks` module has JMH benchmarks that compare the in-memory algorithms under concurrent load, on one
