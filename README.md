@@ -271,6 +271,11 @@ java -jar benchmarks/target/benchmarks.jar -p algorithm=FIXED_WINDOW   # a singl
 
 Results depend on the machine, so run them on your own hardware before comparing.
 
+## Code style
+
+`mvn verify` runs Spotless and fails on unused imports, trailing whitespace or a missing final newline.
+Run `mvn spotless:apply` to fix them.
+
 ## Getting started
 
 Requirements: JDK 25, Maven 3.9+, Docker (for Redis and the multi-instance setup).
