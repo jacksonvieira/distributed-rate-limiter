@@ -1,5 +1,7 @@
 package io.github.jacksonvieira.ratelimiter.gateway;
 
+import io.github.jacksonvieira.ratelimiter.core.FixedWindowConfig;
+import io.github.jacksonvieira.ratelimiter.core.InMemoryFixedWindowRateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.InMemoryTokenBucketRateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.RateLimiter;
 import io.github.jacksonvieira.ratelimiter.redis.RedisTokenBucketRateLimiter;
@@ -10,7 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Chooses the {@link RateLimiter} implementation from {@code gateway.rate-limit.store}, so the rest
+ * Chooses the {@link RateLimiter} implementation from {@code gateway.rate-limit.store} and {@code gateway.rate-limit.algorithm}, so the rest
  * of the gateway only ever depends on the {@code RateLimiter} port.
  */
 @Configuration(proxyBeanMethods = false)
@@ -19,7 +21,12 @@ class RateLimiterConfiguration {
     @Bean
     @ConditionalOnProperty(name = "gateway.rate-limit.store", havingValue = "memory", matchIfMissing = true)
     RateLimiter inMemoryRateLimiter(GatewayProperties properties) {
-        return new InMemoryTokenBucketRateLimiter(properties.rateLimit().toTokenBucketConfig());
+        GatewayProperties.RateLimit rateLimit = properties.rateLimit();
+        return switch (rateLimit.algorithm()) {
+            case TOKEN_BUCKET -> new InMemoryTokenBucketRateLimiter(rateLimit.toTokenBucketConfig());
+            case FIXED_WINDOW -> new InMemoryFixedWindowRateLimiter(
+                    new FixedWindowConfig(rateLimit.capacity(), rateLimit.refillPeriod()));
+        };
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -38,7 +45,12 @@ class RateLimiterConfiguration {
 
         @Bean
         RateLimiter redisRateLimiter(GatewayProperties properties, StatefulRedisConnection<String, String> connection) {
-            return new RedisTokenBucketRateLimiter(connection, properties.rateLimit().toTokenBucketConfig());
+            GatewayProperties.RateLimit rateLimit = properties.rateLimit();
+            if (rateLimit.algorithm() != GatewayProperties.Algorithm.TOKEN_BUCKET) {
+                throw new IllegalStateException(
+                        "gateway.rate-limit.algorithm=" + rateLimit.algorithm() + " is not available with store=redis yet");
+            }
+            return new RedisTokenBucketRateLimiter(connection, rateLimit.toTokenBucketConfig());
         }
     }
 }

@@ -76,6 +76,8 @@ public record GatewayProperties(Route route, RateLimit rateLimit) {
      * @param refillPeriod period over which {@code refillTokens} are added
      * @param key          what identifies a client
      * @param keyHeader    header holding the client key when {@code key} is {@link KeyStrategy#HEADER}
+     * @param algorithm    limiting algorithm; for {@link Algorithm#FIXED_WINDOW}, {@code capacity} is the limit
+     *                     per window and {@code refillPeriod} the window length ({@code refillTokens} is unused)
      * @param store        where bucket state lives; {@link Store#REDIS} shares it across gateway instances
      * @param onError      what to do with a request when the limiter itself fails (e.g. Redis is down)
      * @param redis        Redis connection settings, used when {@code store} is {@link Store#REDIS}
@@ -86,6 +88,7 @@ public record GatewayProperties(Route route, RateLimit rateLimit) {
             Duration refillPeriod,
             @DefaultValue("ip") KeyStrategy key,
             @DefaultValue("X-API-Key") String keyHeader,
+            @DefaultValue("token-bucket") Algorithm algorithm,
             @DefaultValue("memory") Store store,
             @DefaultValue("fail-open") FailureMode onError,
             @DefaultValue Redis redis) {
@@ -99,6 +102,12 @@ public record GatewayProperties(Route route, RateLimit rateLimit) {
      * @param uri Redis connection URI, e.g. {@code redis://localhost:6379}
      */
     public record Redis(@DefaultValue("redis://localhost:6379") String uri) {}
+
+    public enum Algorithm {
+        TOKEN_BUCKET,
+        /** Available with the in-memory store only. */
+        FIXED_WINDOW
+    }
 
     public enum FailureMode {
         /** Let the request through unlimited: availability over protection. */

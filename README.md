@@ -111,6 +111,7 @@ gateway:
     key: ip                      # ip | header
     key-header: X-API-Key        # used when key = header; falls back to the client IP
     on-error: fail-open          # fail-open | fail-closed, when the limiter itself fails
+    algorithm: token-bucket      # token-bucket | fixed-window (memory store only)
     store: memory                # memory | redis (redis shares one limit across all instances)
     redis:
       uri: redis://localhost:6379   # used when store = redis
