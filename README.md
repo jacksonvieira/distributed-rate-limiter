@@ -232,6 +232,9 @@ With the cluster profile, spans are exported over OTLP/HTTP to Jaeger (UI at `lo
 shows up in Jaeger under that trace id. Outside compose, set
 `management.opentelemetry.tracing.export.otlp.endpoint` to your collector.
 
+Every gateway response carries the trace id in `X-Trace-Id`, so a client can quote it when reporting a problem and
+you can look it up in Jaeger or grep the logs for it.
+
 ## Admin API
 
 The `admin-api` module stores rules in PostgreSQL (schema managed by Flyway) and exposes a CRUD API

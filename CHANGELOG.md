@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Observability
+- Distributed tracing with Micrometer Tracing and OpenTelemetry in the gateway and the admin API (W3C `traceparent`)
+- `[application,traceId,spanId]` on every log line
+- Spans exported over OTLP to Jaeger in the compose cluster; nginx forwards the trace context
+- `X-Trace-Id` response header on the gateway
+
 ## 0.1.0
 
 First release.
