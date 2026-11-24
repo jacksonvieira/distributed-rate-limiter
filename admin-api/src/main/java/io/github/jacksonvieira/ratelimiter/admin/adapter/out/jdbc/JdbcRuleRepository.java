@@ -10,7 +10,9 @@ import io.github.jacksonvieira.ratelimiter.admin.domain.RuleRepository;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
@@ -84,8 +86,8 @@ class JdbcRuleRepository implements RuleRepository {
         return jdbc.sql("delete from rate_limit_rule where id = :id").param("id", id).update() > 0;
     }
 
-    private static java.util.Map<String, Object> parameters(RuleDefinition d) {
-        java.util.Map<String, Object> params = new java.util.HashMap<>();
+    private static Map<String, Object> parameters(RuleDefinition d) {
+        Map<String, Object> params = new HashMap<>();
         params.put("name", d.name());
         params.put("pathPrefix", d.pathPrefix());
         params.put("plan", d.plan());
