@@ -42,12 +42,13 @@ class GatewayConfiguration {
     }
 
     @Bean
-    ProxyHandler proxyHandler(GatewayProperties properties) {
+    ProxyHandler proxyHandler(GatewayProperties properties, WebClient.Builder webClientBuilder) {
         GatewayProperties.Route route = properties.route();
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(route.connectTimeout().toMillis()))
                 .responseTimeout(route.responseTimeout());
-        WebClient webClient = WebClient.builder()
+        WebClient webClient = webClientBuilder
+                .clone()
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
         return new ProxyHandler(route, webClient);
