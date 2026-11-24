@@ -54,9 +54,9 @@ The project follows a hexagonal layout, with dependencies always pointing toward
 | Algorithm | Burst handling | Memory per key | Accuracy | Status |
 | --- | --- | --- | --- | --- |
 | Token bucket | Allows bursts up to capacity | O(1) | Exact | ✅ in-memory |
-| Fixed window counter | Bursts at window edges | O(1) | Approximate | ✅ in-memory |
+| Fixed window counter | Bursts at window edges | O(1) | Approximate | ✅ in-memory · ✅ Redis |
 | Sliding window log | No bursts | O(requests) | Exact | ✅ in-memory |
-| Sliding window counter | Smoothed | O(1) | Approximate | ✅ in-memory |
+| Sliding window counter | Smoothed | O(1) | Approximate | ✅ in-memory · ✅ Redis |
 
 ### Token bucket
 
@@ -125,7 +125,7 @@ gateway:
     key: ip                      # ip | header
     key-header: X-API-Key        # used when key = header; falls back to the client IP
     on-error: fail-open          # fail-open | fail-closed, when the limiter itself fails
-    algorithm: token-bucket      # token-bucket | fixed-window | sliding-window-log | sliding-window-counter (window ones: memory store only)
+    algorithm: token-bucket      # token-bucket | fixed-window | sliding-window-log | sliding-window-counter (with store=redis: token-bucket | fixed-window)
     store: memory                # memory | redis (redis shares one limit across all instances)
     redis:
       uri: redis://localhost:6379   # used when store = redis
@@ -170,7 +170,7 @@ gateway:
 
 `path-prefix` is compared with the full request path (including the route prefix) and `plan` with the
 plan header. Each rule counts on its own, so a client has independent counters under different rules.
-With `store=redis`, rules must use `token-bucket` for now.
+With `store=redis`, rules must use `token-bucket` or `fixed-window` for now.
 
 ### Threading
 

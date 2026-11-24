@@ -3,14 +3,7 @@ package io.github.jacksonvieira.ratelimiter.redis;
 import io.github.jacksonvieira.ratelimiter.core.RateLimitResult;
 import io.github.jacksonvieira.ratelimiter.core.RateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.TokenBucketConfig;
-import io.lettuce.core.RedisNoScriptException;
-import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.api.sync.RedisCommands;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -29,14 +22,13 @@ import java.util.Objects;
  */
 public final class RedisTokenBucketRateLimiter implements RateLimiter {
 
-    static final String SCRIPT = loadScript("token_bucket.lua");
+    static final String SCRIPT = LuaScript.readResource(RedisTokenBucketRateLimiter.class, "token_bucket.lua");
     private static final String DEFAULT_KEY_PREFIX = "rl:tb:";
 
-    private final RedisCommands<String, String> redis;
+    private final LuaScript script;
     private final TokenBucketConfig config;
     private final String keyPrefix;
     private final String[] configArgs;
-    private volatile String scriptSha;
 
     public RedisTokenBucketRateLimiter(StatefulRedisConnection<String, String> connection, TokenBucketConfig config) {
         this(connection, config, DEFAULT_KEY_PREFIX);
@@ -44,7 +36,7 @@ public final class RedisTokenBucketRateLimiter implements RateLimiter {
 
     public RedisTokenBucketRateLimiter(
             StatefulRedisConnection<String, String> connection, TokenBucketConfig config, String keyPrefix) {
-        this.redis = Objects.requireNonNull(connection, "connection").sync();
+        Objects.requireNonNull(connection, "connection");
         this.config = Objects.requireNonNull(config, "config");
         this.keyPrefix = Objects.requireNonNull(keyPrefix, "keyPrefix");
 
@@ -57,7 +49,7 @@ public final class RedisTokenBucketRateLimiter implements RateLimiter {
                 Long.toString(config.refillTokens()),
                 Long.toString(refillPeriodMicros)
         };
-        this.scriptSha = redis.scriptLoad(SCRIPT);
+        this.script = new LuaScript(connection.sync(), SCRIPT);
     }
 
     @Override
@@ -75,15 +67,7 @@ public final class RedisTokenBucketRateLimiter implements RateLimiter {
     }
 
     private List<Long> execute(String redisKey, String permits) {
-        String[] keys = {redisKey};
-        String[] args = {configArgs[0], configArgs[1], configArgs[2], permits};
-        try {
-            return redis.evalsha(scriptSha, ScriptOutputType.MULTI, keys, args);
-        } catch (RedisNoScriptException e) {
-            // Redis lost its script cache (restart, failover, SCRIPT FLUSH): load it again and retry once.
-            scriptSha = redis.scriptLoad(SCRIPT);
-            return redis.evalsha(scriptSha, ScriptOutputType.MULTI, keys, args);
-        }
+        return script.run(new String[] {redisKey}, new String[] {configArgs[0], configArgs[1], configArgs[2], permits});
     }
 
     private void validate(String key, long permits) {
@@ -96,17 +80,6 @@ public final class RedisTokenBucketRateLimiter implements RateLimiter {
         if (permits > config.capacity()) {
             throw new IllegalArgumentException(
                     "permits (" + permits + ") exceed the bucket capacity (" + config.capacity() + ")");
-        }
-    }
-
-    private static String loadScript(String name) {
-        try (InputStream in = RedisTokenBucketRateLimiter.class.getResourceAsStream(name)) {
-            if (in == null) {
-                throw new IllegalStateException("Lua script not found on the classpath: " + name);
-            }
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 }
