@@ -275,6 +275,10 @@ answer is `401`. Swagger UI stays open. Without the setting the API is open, whi
 The gateway sends its key from `gateway.admin-api.api-key`. The compose cluster uses `ADMIN_API_KEY`
 (default `dev-admin-key`).
 
+Every response also carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and `Referrer-Policy: no-referrer`,
+and answers under `/api/` are `Cache-Control: no-store`. Requests declaring a body above `admin.max-body-bytes`
+(default 16384) get `413`.
+
 ### Tracing
 
 The admin API uses Micrometer Tracing with the OpenTelemetry bridge. Incoming `traceparent` headers (W3C Trace Context)
