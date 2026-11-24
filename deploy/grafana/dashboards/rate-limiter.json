@@ -1,0 +1,61 @@
+{
+  "title": "Rate limiter",
+  "uid": "rate-limiter",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Decisions per second by outcome",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (outcome) (rate(ratelimiter_decisions_total[1m]))",
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Rejected per second by rule",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (rule) (rate(ratelimiter_decisions_total{outcome=\"rejected\"}[1m]))",
+          "legendFormat": "{{rule}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Rejection ratio (5m)",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "targets": [
+        {
+          "expr": "sum(rate(ratelimiter_decisions_total{outcome=\"rejected\"}[5m])) / sum(rate(ratelimiter_decisions_total[5m]))"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Limiter failures (5m)",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(ratelimiter_decisions_total{outcome=\"limiter_failed\"}[5m]))"
+        }
+      ]
+    }
+  ]
+}
