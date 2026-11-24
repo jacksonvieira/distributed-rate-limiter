@@ -144,8 +144,10 @@ The `ip` key uses the TCP peer address, not `X-Forwarded-For`, because clients c
 to whatever they like. The gateway itself adds `X-Forwarded-For`, `X-Forwarded-Host` and
 `X-Forwarded-Proto` for the backend, and drops hop-by-hop headers.
 
-Known limitation: the in-memory limiter keeps one bucket per key and never evicts them, so memory
-grows with the number of distinct clients. The Redis implementation will expire idle keys.
+The in-memory limiters evict idle keys: every 1024 calls one caller sweeps the map and drops the keys
+whose state equals a new key's (a bucket that would be full again, a window that has passed), so memory
+follows the number of recently active clients. There is no background thread. Redis expires keys with
+`PEXPIRE`.
 
 ### Rules
 
