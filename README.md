@@ -259,6 +259,12 @@ answer is `401`. Swagger UI stays open. Without the setting the API is open, whi
 The gateway sends its key from `gateway.admin-api.api-key`. The compose cluster uses `ADMIN_API_KEY`
 (default `dev-admin-key`).
 
+### Tracing
+
+The admin API uses Micrometer Tracing with the OpenTelemetry bridge. Incoming `traceparent` headers (W3C Trace Context)
+are honoured, and every log line carries `[application,traceId,spanId]` through the MDC. Sampling is 100% by default
+(`management.tracing.sampling.probability`).
+
 ## Benchmarks
 
 The `benchmarks` module has JMH benchmarks that compare the in-memory algorithms under concurrent load, on one
