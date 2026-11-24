@@ -2,6 +2,7 @@ package io.github.jacksonvieira.ratelimiter.gateway;
 
 import io.github.jacksonvieira.ratelimiter.core.FixedWindowConfig;
 import io.github.jacksonvieira.ratelimiter.core.InMemoryFixedWindowRateLimiter;
+import io.github.jacksonvieira.ratelimiter.core.InMemorySlidingWindowCounterRateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.InMemorySlidingWindowLogRateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.InMemoryTokenBucketRateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.SlidingWindowConfig;
@@ -28,6 +29,8 @@ class RateLimiterConfiguration {
             case TOKEN_BUCKET -> new InMemoryTokenBucketRateLimiter(rateLimit.toTokenBucketConfig());
             case FIXED_WINDOW -> new InMemoryFixedWindowRateLimiter(
                     new FixedWindowConfig(rateLimit.capacity(), rateLimit.refillPeriod()));
+            case SLIDING_WINDOW_COUNTER -> new InMemorySlidingWindowCounterRateLimiter(
+                    new SlidingWindowConfig(rateLimit.capacity(), rateLimit.refillPeriod()));
             case SLIDING_WINDOW_LOG -> new InMemorySlidingWindowLogRateLimiter(
                     new SlidingWindowConfig(rateLimit.capacity(), rateLimit.refillPeriod()));
         };
