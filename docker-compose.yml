@@ -29,6 +29,7 @@ x-gateway: &gateway
     GATEWAY_RATELIMIT_REDIS_URI: redis://redis:6379
     GATEWAY_ADMINAPI_ENABLED: "true"
     GATEWAY_ADMINAPI_URL: http://admin-api:8090
+    GATEWAY_ADMINAPI_APIKEY: ${ADMIN_API_KEY:-dev-admin-key}
 
 services:
   redis:
@@ -66,6 +67,7 @@ services:
       - "8090:8090"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ratelimiter
+      ADMIN_APIKEY: ${ADMIN_API_KEY:-dev-admin-key}
     depends_on:
       postgres:
         condition: service_healthy
