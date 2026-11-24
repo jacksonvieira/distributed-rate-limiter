@@ -148,6 +148,7 @@ gateway:
     store: memory                # memory | redis (redis shares one limit across all instances)
     redis:
       uri: redis://localhost:6379   # used when store = redis
+      command-timeout: 1s           # a Redis command fails after this; commands fail at once while disconnected
 ```
 
 | Situation | Response |

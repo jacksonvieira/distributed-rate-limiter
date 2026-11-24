@@ -175,10 +175,14 @@ public record GatewayProperties(
     }
 
     /**
-     * @param uri Redis connection URI, e.g. {@code redis://localhost:6379}
+     * @param uri            Redis connection URI, e.g. {@code redis://localhost:6379}
+     * @param commandTimeout how long a Redis command may take before it fails; commands issued while the
+     *                       connection is down fail immediately instead of waiting for the reconnection
      */
     public record Redis(
-            @DefaultValue("redis://localhost:6379") String uri, @DefaultValue CircuitBreaker circuitBreaker) {}
+            @DefaultValue("redis://localhost:6379") String uri,
+            @DefaultValue("1s") Duration commandTimeout,
+            @DefaultValue CircuitBreaker circuitBreaker) {}
 
     /**
      * When enabled, repeated Redis failures open a circuit and requests are limited by an in-memory limiter

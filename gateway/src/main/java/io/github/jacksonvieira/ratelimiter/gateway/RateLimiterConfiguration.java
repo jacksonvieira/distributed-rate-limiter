@@ -12,7 +12,9 @@ import io.github.jacksonvieira.ratelimiter.redis.RedisFixedWindowRateLimiter;
 import io.github.jacksonvieira.ratelimiter.redis.RedisSlidingWindowCounterRateLimiter;
 import io.github.jacksonvieira.ratelimiter.redis.RedisSlidingWindowLogRateLimiter;
 import io.github.jacksonvieira.ratelimiter.redis.RedisTokenBucketRateLimiter;
+import io.lettuce.core.ClientOptions;
 import io.lettuce.core.RedisClient;
+import io.lettuce.core.TimeoutOptions;
 import io.lettuce.core.api.StatefulRedisConnection;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -54,7 +56,13 @@ class RateLimiterConfiguration {
 
         @Bean(destroyMethod = "shutdown")
         RedisClient redisClient(GatewayProperties properties) {
-            return RedisClient.create(properties.rateLimit().redis().uri());
+            GatewayProperties.Redis redis = properties.rateLimit().redis();
+            RedisClient client = RedisClient.create(redis.uri());
+            client.setOptions(ClientOptions.builder()
+                    .disconnectedBehavior(ClientOptions.DisconnectedBehavior.REJECT_COMMANDS)
+                    .timeoutOptions(TimeoutOptions.builder().fixedTimeout(redis.commandTimeout()).build())
+                    .build());
+            return client;
         }
 
         @Bean(destroyMethod = "close")
