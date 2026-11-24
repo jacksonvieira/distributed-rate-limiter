@@ -30,3 +30,9 @@ gateway:
     store: memory
     redis:
       uri: redis://localhost:6379
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
