@@ -36,6 +36,11 @@ class GatewayConfiguration {
     }
 
     @Bean
+    TraceIdHeaderFilter traceIdHeaderFilter(io.micrometer.tracing.Tracer tracer) {
+        return new TraceIdHeaderFilter(tracer);
+    }
+
+    @Bean
     RateLimitFilter rateLimitFilter(
             GatewayProperties properties, RateLimitPolicy policy, RateLimitObserver observer) {
         return new RateLimitFilter(properties.route(), policy, properties.rateLimit().onError(), observer);
