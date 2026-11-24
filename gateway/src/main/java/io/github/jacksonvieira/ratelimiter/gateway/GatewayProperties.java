@@ -3,7 +3,10 @@ package io.github.jacksonvieira.ratelimiter.gateway;
 import io.github.jacksonvieira.ratelimiter.core.TokenBucketConfig;
 import java.net.URI;
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -11,14 +14,24 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * Gateway configuration, bound from the {@code gateway.*} properties.
  *
  * @param route     the single route this gateway serves
- * @param rateLimit the limit applied to requests on that route
+ * @param rateLimit the default limit applied to requests on that route
+ * @param rules     optional overrides of the default limit, checked in order; the first match wins
+ * @param planHeader header whose value is matched against {@link Rule#plan()}
  */
 @ConfigurationProperties("gateway")
-public record GatewayProperties(Route route, RateLimit rateLimit) {
+public record GatewayProperties(
+        Route route, RateLimit rateLimit, @DefaultValue List<Rule> rules, @DefaultValue("X-Plan") String planHeader) {
 
     public GatewayProperties {
         Objects.requireNonNull(route, "gateway.route must be configured");
         Objects.requireNonNull(rateLimit, "gateway.rate-limit must be configured");
+        rules = rules == null ? List.of() : List.copyOf(rules);
+        Set<String> names = new HashSet<>();
+        for (Rule rule : rules) {
+            if (!names.add(rule.name())) {
+                throw new IllegalArgumentException("gateway.rules has a duplicate name: " + rule.name());
+            }
+        }
     }
 
     /**
@@ -95,6 +108,69 @@ public record GatewayProperties(Route route, RateLimit rateLimit) {
 
         public TokenBucketConfig toTokenBucketConfig() {
             return new TokenBucketConfig(capacity, refillTokens, refillPeriod);
+        }
+    }
+
+    /**
+     * Overrides parts of the default {@link RateLimit} for the requests it matches. Every field except
+     * {@code name} is optional; a missing limit setting is inherited from {@code gateway.rate-limit}.
+     *
+     * @param name         unique identifier; also scopes the rule's counters
+     * @param pathPrefix   matches requests whose full request path (including the route prefix) starts with it, segment-wise; any path when absent
+     * @param plan         matches requests whose plan header equals it; any plan when absent
+     * @param capacity     overrides {@link RateLimit#capacity()}
+     * @param refillTokens overrides {@link RateLimit#refillTokens()}
+     * @param refillPeriod overrides {@link RateLimit#refillPeriod()}
+     * @param algorithm    overrides {@link RateLimit#algorithm()}
+     * @param key          overrides {@link RateLimit#key()}
+     * @param keyHeader    overrides {@link RateLimit#keyHeader()}
+     */
+    public record Rule(
+            String name,
+            String pathPrefix,
+            String plan,
+            Long capacity,
+            Long refillTokens,
+            Duration refillPeriod,
+            Algorithm algorithm,
+            KeyStrategy key,
+            String keyHeader) {
+
+        public Rule {
+            if (name == null || name.isBlank()) {
+                throw new IllegalArgumentException("every gateway.rules entry needs a name");
+            }
+            if (pathPrefix != null && !pathPrefix.startsWith("/")) {
+                throw new IllegalArgumentException(
+                        "gateway.rules[" + name + "].path-prefix must start with '/', got " + pathPrefix);
+            }
+            if (pathPrefix != null && pathPrefix.length() > 1 && pathPrefix.endsWith("/")) {
+                pathPrefix = pathPrefix.substring(0, pathPrefix.length() - 1);
+            }
+        }
+
+        public boolean matches(String path, String requestPlan) {
+            boolean pathMatches = pathPrefix == null
+                    || "/".equals(pathPrefix)
+                    || path.equals(pathPrefix)
+                    || path.startsWith(pathPrefix + "/");
+            return pathMatches && (plan == null || plan.equals(requestPlan));
+        }
+
+        /**
+         * @return the default limit with this rule's overrides applied
+         */
+        public RateLimit applyTo(RateLimit base) {
+            return new RateLimit(
+                    capacity != null ? capacity : base.capacity(),
+                    refillTokens != null ? refillTokens : base.refillTokens(),
+                    refillPeriod != null ? refillPeriod : base.refillPeriod(),
+                    key != null ? key : base.key(),
+                    keyHeader != null ? keyHeader : base.keyHeader(),
+                    algorithm != null ? algorithm : base.algorithm(),
+                    base.store(),
+                    base.onError(),
+                    base.redis());
         }
     }
 
