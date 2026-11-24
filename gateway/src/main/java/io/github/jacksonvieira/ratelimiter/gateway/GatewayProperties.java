@@ -106,7 +106,9 @@ public record GatewayProperties(Route route, RateLimit rateLimit) {
     public enum Algorithm {
         TOKEN_BUCKET,
         /** Available with the in-memory store only. */
-        FIXED_WINDOW
+        FIXED_WINDOW,
+        /** Available with the in-memory store only; same {@code capacity} / {@code refillPeriod} meaning as the fixed window. */
+        SLIDING_WINDOW_LOG
     }
 
     public enum FailureMode {

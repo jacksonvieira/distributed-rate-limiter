@@ -2,7 +2,9 @@ package io.github.jacksonvieira.ratelimiter.gateway;
 
 import io.github.jacksonvieira.ratelimiter.core.FixedWindowConfig;
 import io.github.jacksonvieira.ratelimiter.core.InMemoryFixedWindowRateLimiter;
+import io.github.jacksonvieira.ratelimiter.core.InMemorySlidingWindowLogRateLimiter;
 import io.github.jacksonvieira.ratelimiter.core.InMemoryTokenBucketRateLimiter;
+import io.github.jacksonvieira.ratelimiter.core.SlidingWindowConfig;
 import io.github.jacksonvieira.ratelimiter.core.RateLimiter;
 import io.github.jacksonvieira.ratelimiter.redis.RedisTokenBucketRateLimiter;
 import io.lettuce.core.RedisClient;
@@ -26,6 +28,8 @@ class RateLimiterConfiguration {
             case TOKEN_BUCKET -> new InMemoryTokenBucketRateLimiter(rateLimit.toTokenBucketConfig());
             case FIXED_WINDOW -> new InMemoryFixedWindowRateLimiter(
                     new FixedWindowConfig(rateLimit.capacity(), rateLimit.refillPeriod()));
+            case SLIDING_WINDOW_LOG -> new InMemorySlidingWindowLogRateLimiter(
+                    new SlidingWindowConfig(rateLimit.capacity(), rateLimit.refillPeriod()));
         };
     }
 
