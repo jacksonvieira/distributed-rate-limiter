@@ -279,6 +279,11 @@ Every response also carries `X-Content-Type-Options: nosniff`, `X-Frame-Options:
 and answers under `/api/` are `Cache-Control: no-store`. Requests declaring a body above `admin.max-body-bytes`
 (default 16384) get `413`.
 
+Calls to `/api/**` are rate limited per client address with the project's own token bucket, ahead of the API key check
+so key guessing is slowed down too. Over the limit the answer is `429` with `Retry-After`. Tune it with
+`admin.rate-limit.burst` (default 100) and `admin.rate-limit.requests-per-minute` (default 600), or turn it off with
+`admin.rate-limit.enabled=false`. Behind a proxy every call shares the proxy's address, so raise the limits there.
+
 ### TLS
 
 Both the admin API and the gateway are Spring Boot applications, so HTTPS is switched on with the standard
