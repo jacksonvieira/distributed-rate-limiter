@@ -239,6 +239,19 @@ answer is `401`. Swagger UI stays open. Without the setting the API is open, whi
 The gateway sends its key from `gateway.admin-api.api-key`. The compose cluster uses `ADMIN_API_KEY`
 (default `dev-admin-key`).
 
+## Benchmarks
+
+The `benchmarks` module has JMH benchmarks that compare the in-memory algorithms under concurrent load, on one
+hot key and on many keys.
+
+```bash
+mvn -q -pl benchmarks -am package -DskipTests
+java -jar benchmarks/target/benchmarks.jar                      # full run
+java -jar benchmarks/target/benchmarks.jar -p algorithm=FIXED_WINDOW   # a single algorithm
+```
+
+Results depend on the machine, so run them on your own hardware before comparing.
+
 ## Getting started
 
 Requirements: JDK 25, Maven 3.9+, Docker (for Redis and the multi-instance setup).
