@@ -39,7 +39,7 @@ and asks the limiter. If Redis fails, a circuit breaker switches to a local limi
 ```mermaid
 flowchart TB
     subgraph admin-api
-        W[adapter.in.web] --> UC[application use cases] --> D[domain ports] --> J[adapter.out.jdbc]
+        W[adapter.in.web] --> UC[application use cases] --> D[domain ports] --> J[adapter.out.jooq]
     end
     subgraph gateway
         F[RateLimitFilter] --> PO[RateLimitPolicy]
@@ -57,6 +57,8 @@ The project follows a hexagonal layout, with dependencies always pointing toward
 - **Adapters:** `InMemoryTokenBucketRateLimiter` (core) and `RedisTokenBucketRateLimiter` (`ratelimiter-redis`) implement the port; the `gateway` is the driving adapter that calls it.
 - The gateway picks the adapter from configuration and calls the (blocking) port off the event loop.
 - ArchUnit tests in each module fail the build if the core starts depending on an adapter or a framework.
+
+Design decisions are recorded in [docs/adr](docs/adr/README.md).
 
 ### Modules
 

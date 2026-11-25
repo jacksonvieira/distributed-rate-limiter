@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Documentation
+- Architecture decision records in `docs/adr`
+
 ## 0.3.0 - 2026-11-25
 
 ### Security
