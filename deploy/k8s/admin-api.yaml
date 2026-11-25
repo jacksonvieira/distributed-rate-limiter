@@ -11,6 +11,8 @@ spec:
     metadata:
       labels: { app: admin-api }
     spec:
+      volumes:
+        - { name: tmp, emptyDir: {} }
       containers:
         - name: admin-api
           image: ghcr.io/jacksonvieira/ratelimiter-admin-api
@@ -33,6 +35,14 @@ spec:
             httpGet: { path: /actuator/health/liveness, port: 8090 }
             initialDelaySeconds: 30
             periodSeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
           resources:
             requests: { cpu: 100m, memory: 256Mi }
             limits: { memory: 512Mi }
