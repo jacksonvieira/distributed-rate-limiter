@@ -356,6 +356,8 @@ docker pull ghcr.io/jacksonvieira/ratelimiter-admin-api:edge
 
 Tagged releases also get `X.Y.Z` and `X.Y` tags. The images are built from the root `Dockerfile` (build argument `MODULE`).
 
+Hardening: the image runs as a non-root numeric user (10001), works with a read-only root filesystem (mount `/tmp`), sizes the heap from the container limit, and CI scans each image with Trivy and blocks the publish on fixable critical vulnerabilities. The Kubernetes manifests drop all capabilities and set a read-only root filesystem.
+
 ## Kubernetes
 
 `deploy/k8s` holds Kustomize manifests for Redis, PostgreSQL, the admin API and a 3-replica gateway (probes, resource limits, PodDisruptionBudget, Prometheus scrape annotations):
