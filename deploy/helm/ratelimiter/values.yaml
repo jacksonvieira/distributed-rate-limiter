@@ -1,0 +1,32 @@
+image:
+  registry: ghcr.io/jacksonvieira
+  tag: ""            # defaults to the chart appVersion
+
+# Development defaults only. Set existingSecret (keys: admin-api-key, postgres-password) for real deployments.
+existingSecret: ""
+adminApiKey: dev-admin-key
+postgresPassword: ratelimiter
+
+gateway:
+  replicas: 3
+  routePathPrefix: /api
+  routeUri: http://backend:80
+  keyStrategy: header
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 512Mi }
+
+adminApi:
+  replicas: 1
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 512Mi }
+
+# Set enabled=false and point host/uri at managed services to use your own Redis or PostgreSQL.
+redis:
+  enabled: true
+  uri: redis://redis:6379
+postgres:
+  enabled: true
+  url: jdbc:postgresql://postgres:5432/ratelimiter
+  storage: 1Gi
