@@ -3,4 +3,4 @@ name: ratelimiter
 description: Distributed rate limiter gateway with its admin API, Redis and PostgreSQL
 type: application
 version: 0.1.0
-appVersion: "0.3.0"
+appVersion: "0.4.0"
