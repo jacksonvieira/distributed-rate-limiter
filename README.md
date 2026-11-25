@@ -196,6 +196,15 @@ gateway:
 plan header. Each rule counts on its own, so a client has independent counters under different rules.
 Every algorithm is available with both `store=memory` and `store=redis`.
 
+The plan header is sent by the client, so anyone can claim `premium`. To prevent that, map API keys to plans:
+the plan is then taken from the key (`rate-limit.key-header`) and the plan header is ignored.
+
+```yaml
+gateway:
+  plan-by-api-key:
+    key-of-a-paying-customer: premium
+```
+
 ### Threading
 
 `spring.threads.virtual.enabled=true` runs Spring's task executors on virtual threads, and the

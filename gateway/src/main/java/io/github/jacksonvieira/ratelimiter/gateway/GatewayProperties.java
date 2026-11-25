@@ -5,6 +5,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -17,15 +18,22 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param rateLimit the default limit applied to requests on that route
  * @param rules     optional overrides of the default limit, checked in order; the first match wins
  * @param planHeader header whose value is matched against {@link Rule#plan()}
+ * @param planByApiKey plan of each API key (the value of {@code rate-limit.key-header}); when not empty the plan is
+ *                     taken from here and the plan header is ignored, so clients cannot choose their own plan
  */
 @ConfigurationProperties("gateway")
 public record GatewayProperties(
-        Route route, RateLimit rateLimit, @DefaultValue List<Rule> rules, @DefaultValue("X-Plan") String planHeader) {
+        Route route,
+        RateLimit rateLimit,
+        @DefaultValue List<Rule> rules,
+        @DefaultValue("X-Plan") String planHeader,
+        @DefaultValue Map<String, String> planByApiKey) {
 
     public GatewayProperties {
         Objects.requireNonNull(route, "gateway.route must be configured");
         Objects.requireNonNull(rateLimit, "gateway.rate-limit must be configured");
         rules = rules == null ? List.of() : List.copyOf(rules);
+        planByApiKey = planByApiKey == null ? Map.of() : Map.copyOf(planByApiKey);
         Set<String> names = new HashSet<>();
         for (Rule rule : rules) {
             if (!names.add(rule.name())) {

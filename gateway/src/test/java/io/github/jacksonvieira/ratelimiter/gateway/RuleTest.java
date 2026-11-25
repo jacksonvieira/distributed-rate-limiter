@@ -63,7 +63,7 @@ class RuleTest {
                 5, 1, Duration.ofSeconds(1), null, null, null, null, null, null);
 
         assertThatThrownBy(() -> new GatewayProperties(
-                        route, limit, List.of(rule("a", null, null), rule("a", "/x", null)), "X-Plan"))
+                        route, limit, List.of(rule("a", null, null), rule("a", "/x", null)), "X-Plan", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("duplicate");
     }

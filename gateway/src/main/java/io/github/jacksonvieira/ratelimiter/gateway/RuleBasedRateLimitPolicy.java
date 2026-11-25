@@ -2,6 +2,7 @@ package io.github.jacksonvieira.ratelimiter.gateway;
 
 import io.github.jacksonvieira.ratelimiter.core.RateLimiter;
 import java.util.List;
+import java.util.function.Function;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
 /**
@@ -14,18 +15,19 @@ final class RuleBasedRateLimitPolicy implements RateLimitPolicy {
 
     private final List<CompiledRule> rules;
     private final RateLimitPolicy fallback;
-    private final String planHeader;
+    private final Function<ServerHttpRequest, String> planResolver;
 
-    RuleBasedRateLimitPolicy(List<CompiledRule> rules, RateLimitPolicy fallback, String planHeader) {
+    RuleBasedRateLimitPolicy(
+            List<CompiledRule> rules, RateLimitPolicy fallback, Function<ServerHttpRequest, String> planResolver) {
         this.rules = List.copyOf(rules);
         this.fallback = fallback;
-        this.planHeader = planHeader;
+        this.planResolver = planResolver;
     }
 
     @Override
     public Selection select(ServerHttpRequest request) {
         String path = request.getPath().value();
-        String plan = request.getHeaders().getFirst(planHeader);
+        String plan = planResolver.apply(request);
         for (CompiledRule compiled : rules) {
             if (compiled.rule().matches(path, plan)) {
                 String key = compiled.rule().name() + ":" + compiled.keyResolver().resolve(request);
