@@ -375,6 +375,21 @@ kubectl apply -k deploy/k8s
 
 The images come from GHCR (see above). `secret.yaml` contains development defaults only, and `GATEWAY_ROUTE_URI` must point to your own backend service.
 
+### Helm chart
+
+`deploy/helm/ratelimiter` packages the same stack with values for replicas, image tag, resources, routing and
+secrets:
+
+```bash
+helm install rl deploy/helm/ratelimiter -n ratelimiter --create-namespace
+# production: own secret (keys admin-api-key, postgres-password) and managed Redis/PostgreSQL
+helm install rl deploy/helm/ratelimiter --set existingSecret=my-secret \
+  --set redis.enabled=false --set redis.uri=redis://my-redis:6379 \
+  --set postgres.enabled=false --set postgres.url=jdbc:postgresql://my-pg:5432/ratelimiter
+```
+
+The chart is linted and rendered with `helm lint` and `helm template`; it has not been applied to a live cluster.
+
 ## Mutation testing
 
 `make mutation` runs [PIT](https://pitest.org) against `ratelimiter-core` and fails when fewer than 80% of the mutants are killed. The report is written to `ratelimiter-core/target/pit-reports/index.html`.
