@@ -334,6 +334,10 @@ java -jar benchmarks/target/benchmarks.jar -p algorithm=FIXED_WINDOW   # a singl
 
 Results depend on the machine, so run them on your own hardware before comparing.
 
+## Mutation testing
+
+`make mutation` runs [PIT](https://pitest.org) against `ratelimiter-core` and fails when fewer than 80% of the mutants are killed. The report is written to `ratelimiter-core/target/pit-reports/index.html`.
+
 ## Code style
 
 `mvn verify` runs Spotless and fails on unused imports, trailing whitespace or a missing final newline.
