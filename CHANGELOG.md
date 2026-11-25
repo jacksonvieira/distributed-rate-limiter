@@ -6,6 +6,9 @@
 - Container image runs as numeric non-root user, with container-aware JVM flags; Trivy scan before publishing; restricted `securityContext` in the Kubernetes manifests
 - `gateway.plan-by-api-key` resolves the plan from the API key, so clients cannot choose their own plan with the plan header
 
+### Added
+- Prometheus alert rules for gateway availability, limiter failures and high rejection ratio
+
 ### Documentation
 - Architecture decision records in `docs/adr`
 

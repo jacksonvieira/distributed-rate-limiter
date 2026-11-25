@@ -1,0 +1,28 @@
+groups:
+  - name: rate-limiter
+    rules:
+      - alert: GatewayDown
+        expr: up{job="gateway"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Gateway {{ $labels.instance }} is down"
+
+      - alert: RateLimiterFailing
+        expr: sum(rate(ratelimiter_decisions_total{outcome="limiter_failed"}[5m])) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Limiter backend failures (Redis unreachable or timing out)"
+
+      - alert: HighRejectionRatio
+        expr: |
+          sum by (rule) (rate(ratelimiter_decisions_total{outcome="rejected"}[5m]))
+            / sum by (rule) (rate(ratelimiter_decisions_total[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "More than 50% of requests rejected for rule {{ $labels.rule }}"
