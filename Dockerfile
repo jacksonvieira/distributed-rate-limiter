@@ -16,7 +16,8 @@ RUN mvn -B -q -pl ${MODULE} -am package -DskipTests
 
 FROM eclipse-temurin:25-jre
 ARG MODULE=gateway
-RUN useradd --system --no-create-home app
-USER app
+RUN useradd --system --no-create-home --uid 10001 app
+USER 10001
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
 COPY --from=build /build/${MODULE}/target/${MODULE}-*-SNAPSHOT.jar /app/app.jar
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
