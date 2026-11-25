@@ -231,6 +231,10 @@ With the cluster profile, Prometheus (`localhost:9090`) scrapes the three gatewa
 (`localhost:3000`, anonymous access, local use only) ships a provisioned **Rate limiter** dashboard:
 decisions per second by outcome, rejections per rule, rejection ratio and limiter failures.
 
+Alert rules live in `deploy/alerts.yml` (loaded by Prometheus): `GatewayDown`, `RateLimiterFailing`
+(any `limiter_failed` decisions) and `HighRejectionRatio` (more than 50% rejected for a rule over 5 minutes).
+Validate them with `promtool check rules deploy/alerts.yml`.
+
 ### Tracing
 
 The gateway uses Micrometer Tracing with the OpenTelemetry bridge. It continues the caller's W3C `traceparent`
