@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help build test verify format format-check clean \
         redis-up postgres-up infra-down run-gateway run-admin \
-        cluster-up cluster-down cluster-logs cluster-ps load-check benchmarks
+        cluster-up cluster-down cluster-logs cluster-ps load-check benchmarks mutation
 
 MVN     ?= mvn
 COMPOSE ?= docker compose
@@ -66,6 +66,9 @@ load-check: ## Check the shared limit under concurrency (cluster must be up)
 	python3 scripts/load_check.py
 
 ##@ Performance
+
+mutation: ## Run PIT mutation testing on ratelimiter-core (fails below 80% killed)
+	$(MVN) -B -pl ratelimiter-core test-compile org.pitest:pitest-maven:1.30.2:mutationCoverage
 
 benchmarks: ## Run the JMH benchmarks (full run, takes a while)
 	$(MVN) -B -DskipTests package -pl benchmarks -am

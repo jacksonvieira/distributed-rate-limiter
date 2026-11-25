@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Testing
+- PIT mutation testing for `ratelimiter-core` (`make mutation`, 80% threshold)
 - Contract tests: the admin API and the gateway verify the same `contracts/rules-list.json` fixture
 
 ### Data

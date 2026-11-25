@@ -26,4 +26,32 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>1.30.2</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-junit5-plugin</artifactId>
+                        <version>1.2.3</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <targetClasses>
+                        <param>io.github.jacksonvieira.ratelimiter.*</param>
+                    </targetClasses>
+                    <outputFormats>
+                        <format>HTML</format>
+                        <format>XML</format>
+                    </outputFormats>
+                    <mutationThreshold>80</mutationThreshold>
+                    <timestampedReports>false</timestampedReports>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
