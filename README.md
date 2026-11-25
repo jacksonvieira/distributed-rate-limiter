@@ -235,6 +235,9 @@ Alert rules live in `deploy/alerts.yml` (loaded by Prometheus): `GatewayDown`, `
 (any `limiter_failed` decisions) and `HighRejectionRatio` (more than 50% rejected for a rule over 5 minutes).
 Validate them with `promtool check rules deploy/alerts.yml`.
 
+The **Load check** workflow (manual or weekly) starts the cluster and runs `scripts/load_check.py`, failing if
+more requests are accepted than the shared limit allows. Run it locally with `make cluster-up load-check`.
+
 ### Tracing
 
 The gateway uses Micrometer Tracing with the OpenTelemetry bridge. It continues the caller's W3C `traceparent`

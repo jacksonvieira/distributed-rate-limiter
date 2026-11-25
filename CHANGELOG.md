@@ -7,6 +7,7 @@
 - `gateway.plan-by-api-key` resolves the plan from the API key, so clients cannot choose their own plan with the plan header
 
 ### Added
+- Scheduled and manual `Load check` workflow that verifies the shared limit against the compose cluster
 - Prometheus alert rules for gateway availability, limiter failures and high rejection ratio
 
 ### Documentation

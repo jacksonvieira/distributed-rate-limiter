@@ -1,0 +1,40 @@
+name: Load check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  load-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start the cluster
+        run: docker compose --profile cluster up -d --build
+
+      - name: Wait for the load balancer
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -H 'X-API-Key: warmup' http://localhost:8000/api/ || true)
+            if [ "$code" = "200" ] || [ "$code" = "429" ]; then exit 0; fi
+            sleep 5
+          done
+          echo "Cluster did not become ready"
+          exit 1
+
+      - name: Check the shared limit under concurrency
+        run: python3 scripts/load_check.py
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose --profile cluster logs --tail=200
+
+      - name: Stop the cluster
+        if: always()
+        run: docker compose --profile cluster down -v
