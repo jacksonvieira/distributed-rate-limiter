@@ -1,6 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 - 2026-11-25
+
+### Security
+- Dependabot updates and CodeQL analysis
+- Security headers and request body size limits in the gateway
+- Rate limiting on the admin API
+- TLS test coverage
+
+### Resilience
+- Redis commands fail fast while disconnected (`gateway.rate-limit.redis.command-timeout`, default 1s), found with a Toxiproxy outage test
+
+### Developer experience
+- `Makefile` wrapping the common build, run, cluster and benchmark tasks
 
 ### Operations
 - CI workflow publishing the gateway and admin API images to GHCR on `main` and version tags
