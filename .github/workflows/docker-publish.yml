@@ -41,6 +41,24 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
+      - name: Build image for scanning
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: MODULE=${{ matrix.module }}
+          load: true
+          tags: scan/${{ matrix.module }}:ci
+          cache-from: type=gha,scope=${{ matrix.module }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.module }}
+
+      - name: Scan for vulnerabilities
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: scan/${{ matrix.module }}:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
