@@ -3,6 +3,8 @@ package io.github.jacksonvieira.ratelimiter.gateway;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 
 /**
  * Turns rules into a {@link RateLimitPolicy}. A rule that is unchanged since the previous build keeps its
@@ -31,8 +33,18 @@ final class RulePolicyBuilder {
             current.put(rule, previous.containsKey(rule) ? previous.get(rule) : compile(rule));
         }
         previous = current;
-        return new RuleBasedRateLimitPolicy(
-                rules.stream().map(current::get).toList(), fallback, properties.planHeader());
+        return new RuleBasedRateLimitPolicy(rules.stream().map(current::get).toList(), fallback, planResolver());
+    }
+
+    private Function<ServerHttpRequest, String> planResolver() {
+        if (properties.planByApiKey().isEmpty()) {
+            return request -> request.getHeaders().getFirst(properties.planHeader());
+        }
+        String keyHeader = properties.rateLimit().keyHeader();
+        return request -> {
+            String apiKey = request.getHeaders().getFirst(keyHeader);
+            return apiKey == null ? null : properties.planByApiKey().get(apiKey);
+        };
     }
 
     private RuleBasedRateLimitPolicy.CompiledRule compile(GatewayProperties.Rule rule) {
