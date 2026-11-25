@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ratelimiter
+resources:
+  - namespace.yaml
+  - secret.yaml
+  - redis.yaml
+  - postgres.yaml
+  - admin-api.yaml
+  - gateway.yaml
+images:
+  - name: ghcr.io/jacksonvieira/ratelimiter-gateway
+    newTag: edge
+  - name: ghcr.io/jacksonvieira/ratelimiter-admin-api
+    newTag: edge
