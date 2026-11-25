@@ -334,6 +334,17 @@ java -jar benchmarks/target/benchmarks.jar -p algorithm=FIXED_WINDOW   # a singl
 
 Results depend on the machine, so run them on your own hardware before comparing.
 
+## Container images
+
+Every push to `main` and every `v*` tag publishes the gateway and admin API images to GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/jacksonvieira/ratelimiter-gateway:edge
+docker pull ghcr.io/jacksonvieira/ratelimiter-admin-api:edge
+```
+
+Tagged releases also get `X.Y.Z` and `X.Y` tags. The images are built from the root `Dockerfile` (build argument `MODULE`).
+
 ## Mutation testing
 
 `make mutation` runs [PIT](https://pitest.org) against `ratelimiter-core` and fails when fewer than 80% of the mutants are killed. The report is written to `ratelimiter-core/target/pit-reports/index.html`.
