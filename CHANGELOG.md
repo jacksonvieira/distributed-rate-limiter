@@ -5,6 +5,8 @@
 ### Operations
 - CI workflow publishing the gateway and admin API images to GHCR on `main` and version tags
 
+- Kustomize manifests in `deploy/k8s` for the full stack
+
 ### Testing
 - PIT mutation testing for `ratelimiter-core` (`make mutation`, 80% threshold)
 - Contract tests: the admin API and the gateway verify the same `contracts/rules-list.json` fixture

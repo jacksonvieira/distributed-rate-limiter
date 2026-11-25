@@ -345,6 +345,16 @@ docker pull ghcr.io/jacksonvieira/ratelimiter-admin-api:edge
 
 Tagged releases also get `X.Y.Z` and `X.Y` tags. The images are built from the root `Dockerfile` (build argument `MODULE`).
 
+## Kubernetes
+
+`deploy/k8s` holds Kustomize manifests for Redis, PostgreSQL, the admin API and a 3-replica gateway (probes, resource limits, PodDisruptionBudget, Prometheus scrape annotations):
+
+```bash
+kubectl apply -k deploy/k8s
+```
+
+The images come from GHCR (see above). `secret.yaml` contains development defaults only, and `GATEWAY_ROUTE_URI` must point to your own backend service.
+
 ## Mutation testing
 
 `make mutation` runs [PIT](https://pitest.org) against `ratelimiter-core` and fails when fewer than 80% of the mutants are killed. The report is written to `ratelimiter-core/target/pit-reports/index.html`.
